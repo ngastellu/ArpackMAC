@@ -40,5 +40,4 @@ function read_xsf(filename; read_forces=true)
         return atoms, supercell
     end
 end
-
 end

@@ -1,8 +1,8 @@
 module TightBinding
 
-using SparseArrays, NearestNeighbors
+using SparseArrays, LinearAlgebra
 
-export constructHtb_dense, lindbergHtb_sparse
+export constructHtb_dense, lindbergHtb_sparse, nn_pairdists, nn_pairdists_vec
 
 function simpleHtb_dense(n::Int64,t::Number)
     H = zeros((n,n))
@@ -23,7 +23,7 @@ function ij_inds(k_inds,N)
     # 1D array constructed in the `nn_pairdists` function.
     zero_j_inds = [Int(k*(k-1)/2) for k=1:N]
     i_inds = [sum(k .>= zero_j_inds) for k ∈ k_inds]
-    j_inds = k .- zero_j_inds[i_inds .- 1]
+    j_inds = k_inds .- zero_j_inds[i_inds .- 1]
     return i_inds, j_inds
 end
 
@@ -35,24 +35,40 @@ function nn_pairdists(pos, rNN)
     for i=1:N 
         for j=1:i-1
             pairdists[k] = norm(pos[i]-pos[j])
+            k+=1
         end
     end
     bonded = pairdists .<= rNN
     nn_k_inds = findall(bonded)
-    ii, jj = ij_inds(nn_k_inds)
+    ii, jj = ij_inds(nn_k_inds, N)
     return pairdists[bonded], ii, jj
 end
 
-function lindbergHtb_sparse(pos,rNN,gamma)
-    b0 = -2.438 #eV
+function nn_pairdists_vec(pos,rNN)
+    N = size(pos,1)
+    pairdists = norm.(pos' .- pos, 2)
+    for i=1:N
+        pairdists[i,i] = rNN * 10 #ignore diagonal elements when determining which pairs are NN 
+    end
+    bonded = findall(pairdists .<= rNN)
+    nn_pairdists = pairdists[bonded]
+    ii = [ci[1] for ci in bonded]
+    jj = [ci[2] for ci in bonded]
+    return nn_pairdists, ii, jj
+end
+
+function lindbergHtb_sparse(pos,rNN)
+    β0 = -2.438 #eV
     kb = 0.405 #angstrom^-1
     R0 = 1.397 #angstrom
-    mub = 2.035 #angstrom^-1
+    μb = 2.035 #angstrom^-1
 
     N = size(pos,1)
+    println("Entering pairdists now...")
     dists, ii, jj = nn_pairdists(pos,rNN)
-    @. hvals = b0 * exp(-mub*(dists-R0)) * (1+kb*(dists-R0))
-    Htb = sparse(ii,jj,hvals)
+    @. hvals = β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
+    Htb = sparse(ii,jj,hvals,N,N)
+    Htb += Htb' #symmetrise Htb
 end
 
 end
