@@ -12,8 +12,8 @@ module NNTst
     N = size(pos,1)
 
     py"""import numpy as np 
-    inn = np.load("nn_inds.npy")
-    dnn = np.load("nn_dists.npy")"""
+    inn = np.load("data/nn_inds.npy")
+    dnn = np.load("data/nn_dists.npy")"""
 
     innpy = PyArray(py"inn"o) .+ 1
     dnnpy = PyArray(py"dnn"o)
@@ -21,20 +21,27 @@ module NNTst
     #println(innpy[1:5,:])
     #println(innpy[end-5:end,:])
 
-    dnn, inn = nn_pairdists_vec(pos, rCC, true)
-    println(any(innpy .> N))
+    dnn, ii, jj = nn_pairdists_vec(pos, rCC)
+    println(typeof(ii))
+    inn = cat(ii,jj,dims=2)
     sinn = Set(eachrow(inn))
     sinnpy = Set(eachrow(innpy))
+    sample = rand(sinn,10)
+    sample2 = rand(sinnpy,10)
 
-    Δ = symdiff(sinn,sinnpy)
-    println("Δ = ", Δ)
-    println("inn == innpy: ", issetequal(sinn,sinnpy))
-
-    for ij in Δ
-        println("Inds = $ij ; dnn$ij = $(dnn[ij]) ; dnnpy$ij = $(dnnpy[ij])")
+    for (s,s2) in zip(sample,sample2)
+        println("$s  $s2")
     end
 
-    @time nn_pairdists_vec(pos,rCC,false)
+    Δ = symdiff(sinn,sinnpy)
+    # println("Δ = ", Δ)
+    println("inn == innpy: ", issetequal(sinn,sinnpy))
+
+    # for ij ∈ Δ
+    #     println("Inds = $ij ; dnn$ij = $(dnn[ij]) ; dnnpy$ij = $(dnnpy[ij])")
+    # end
+
+    @time nn_pairdists_vec(pos,rCC)
 
 
 

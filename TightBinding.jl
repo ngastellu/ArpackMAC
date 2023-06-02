@@ -64,7 +64,7 @@ function nn_pairdists(pos, rNN)
     return pairdists[bonded], ii, jj
 end
 
-function nn_pairdists_vec(pos, rNN, return_hashtable=true)
+function nn_pairdists_vec_ht(pos, rNN, return_hashtable=true)
     N = size(pos,1)
     pairdists = zeros(Int(N*(N-1)/2))
     if return_hashtable
@@ -74,7 +74,8 @@ function nn_pairdists_vec(pos, rNN, return_hashtable=true)
     for i=1:N-1 
         pairdists[k:k+N-i-1] = norm.(eachrow(pos[i+1:N,:] .- pos[i,:]'))
         if return_hashtable
-            @time hashtable[k:k+N-i-1,:] = reduce(hcat,[[i,j] for j=i+1:N])'
+            hashtable[k:k+N-i-1,:] = reduce(hcat,[[i,j] for j=i+1:N])'
+            
         end
         k+=N-i
     end
@@ -87,6 +88,22 @@ function nn_pairdists_vec(pos, rNN, return_hashtable=true)
         ii, jj = ij_inds_vec(nn_k_inds, N)
         return pairdists[bonded], ii, jj
     end
+end
+
+function nn_pairdists_vec(pos, rNN)
+    N = size(pos,1)
+    pairdists = zeros(Int(N*(N-1)/2))
+    ii = zeros(Int,Int(N*(N-1)/2))
+    jj = zeros(Int,Int(N*(N-1)/2))
+    k = 1
+    for i=1:N-1 
+        pairdists[k:(k+N-i-1)] = norm.(eachrow(pos[i+1:N,:] .- pos[i,:]'))
+        ii[k:(k+N-i-1)] .= i 
+        jj[k:(k+N-i-1)] = i+1:N
+        k+=N-i
+    end
+    bonded = pairdists .<= rNN
+    return @views pairdists[bonded], ii[bonded], jj[bonded]
 end
 
 function nn_pairdists_full_vec(pos,rNN)
