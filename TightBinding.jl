@@ -127,8 +127,8 @@ function lindbergHtb_sparse(pos,rNN)
 
     N = size(pos,1)
     println("Entering pairdists now...")
-    dists, ii, jj = nn_pairdists(pos,rNN)
-    @. hvals = β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
+    dists, ii, jj = nn_pairdists_vec(pos,rNN)
+    hvals = @. β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
     Htb = sparse(ii,jj,hvals,N,N)
     Htb += Htb' #symmetrise Htb
 end

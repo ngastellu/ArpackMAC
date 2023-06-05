@@ -8,11 +8,14 @@ using .QuickArpackBigMAC, .SpectralLanczos, .CoordsIO, .TightBinding
 using Plots, LinearAlgebra, SparseArrays, PyCall
 
 posfile = "data/bigMAC_40x40-100_relaxed.xsf"
+println("Reading coords from file: $posfile...")
 pos, _ = read_xsf(posfile; read_forces=false)
 println(size(pos))
-rCC = 1.8 #max nearest neighbour distance in angstrom
+const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
 
+println("Constructing hamiltonian...")
 H = lindbergHtb_sparse(pos,rCC)
+println("Done!")
 
 N = size(H,1)
 nhalf = Int(N/2)
