@@ -299,7 +299,7 @@ module SpectralLanczos
         while nC < ntarget #&& o < 3
           println("\n\n----------------------- o = $o -----------------------")
           o+=1
-          @printf "\nmu = %.7e ; mu_prev = %.7e ; nC = %d\n" mu mu_prev nC
+          println("\nmu = $mu ; mu_prev = $mu_prev ; nC = $nc\n")
           nleft, mu = count_evals(A, mu)
           ntarget_mu = nleft - nleft_prev #number of eigenvalues between mu_prev and mu
           println("ntarget_mu = ", ntarget_mu)
