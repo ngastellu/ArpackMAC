@@ -39,7 +39,7 @@ function estimate_eLUMO(H,eps_loose)
             eL_guess = elanczos[1]
         
         elseif δN < 0 #understimated eLUMO
-            elanczos = eigs(H,nev=δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
+            elanczos = eigs(H,nev=-δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
             eL_guess = elaczos[end]
         end
