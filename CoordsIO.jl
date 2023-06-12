@@ -1,6 +1,6 @@
 module CoordsIO
 
-export read_xsf
+export read_xsf, read_xyz
 
 function read_xsf(filename; read_forces=true)
     f = open(filename)
@@ -40,4 +40,29 @@ function read_xsf(filename; read_forces=true)
         return atoms, supercell
     end
 end
+
+using DelimitedFiles
+
+function read_xyz(filepath::AbstractString)
+    """Returns the coordinates of all atoms stored in a .xyz file. It assumes all atoms are of the same
+    element and thus does not keep track of the chemical symbols in the input file.
+
+    Parameters
+    ----------
+    filepath : AbstractString
+        Path to the .xyz file whose coordinates we wish to obtain.
+
+    Returns
+    -------
+    coords : Array{Float64, 2}
+        Array of coordinates stored in the input file.
+    """
+    lines = readlines(filepath)
+    natoms = parse(Int, strip(lines[1], chars=['#']))
+    coords = [parse.(Float64, split(strip(line), " ")[2:4]) for line in lines[3:end]]
+
+    return coords
+end
+
+
 end
