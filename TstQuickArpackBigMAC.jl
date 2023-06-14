@@ -7,7 +7,9 @@ include("./TightBinding.jl")
 using .QuickArpackBigMAC, .SpectralLanczos, .CoordsIO, .TightBinding
 using Plots, LinearAlgebra, SparseArrays
 
-posfile = "data/bigMAC_10x10-64_relaxed.xsf"
+
+
+posfile = "data/bigMAC_10x10-$(n)_relaxed.xsf"
 println("Reading coords from file: $posfile...")
 pos, _ = read_xsf(posfile; read_forces=false)
 println(size(pos))

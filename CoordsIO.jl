@@ -58,7 +58,7 @@ function read_xyz(filepath::AbstractString)
         Array of coordinates stored in the input file.
     """
     lines = readlines(filepath)
-    natoms = parse(Int, strip(lines[1], chars=['#']))
+    #natoms = parse(Int, strip(lines[1], chars=['#']))
     coords = [parse.(Float64, split(strip(line), " ")[2:4]) for line in lines[3:end]]
 
     return coords
