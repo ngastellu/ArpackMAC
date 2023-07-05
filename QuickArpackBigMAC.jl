@@ -14,19 +14,21 @@ function estimate_eLUMO(H,eps_loose)
 
     # * Step 1: Roughly estimate where LUMO energy is
     λmin, λmax, indiv_bounds = spectral_bounds(H)
+    println("λmin = $λmin")
+    println("λmax = $λmax")
     eL_guess = 0.5 * (λmin + λmax) # initial guess is the middle of the spectrum
-    nvals, eL_guess = count_evals(H, eL_guess)
+    nvals, eL_guess = count_evals(H, eL_guess,-1e-9) #use negative eps_shift to avoid missing LUMO
 
     # Define some useful constants
     Rspectrum = λmax - λmin
     ugs = Rspectrum/N #unit guess shift
-    n0 = Int(floor(N/2))
+    n0 = Int(floor(N/2)) #number of levels STRICTLY under LUMO 
     δN = nvals - n0
     
     # This approach might be too coarse... might never converge
     while abs(δN) > 0.1 * N #if our initial guess of LUMO energy is way off
         eL_guess = eL_guess + ugs * δN
-        nvals, eL_guess = count_evals(H,eL_guess)
+        nvals, eL_guess = count_evals(H,eL_guess,-1e-9)
         δN = nvals - n0
     end
 
@@ -39,11 +41,11 @@ function estimate_eLUMO(H,eps_loose)
             eL_guess = elanczos[1]
         
         elseif δN < 0 #understimated eLUMO
-            elanczos = eigs(H,nev=-δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
+            elanczos, nconv, _, _, _ = eigs(H,nev=-δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
-            eL_guess = elaczos[end]
+            eL_guess = elanczos[end]
         end
-        nvals, eL_guess = count_evals(H,eL_guess)
+        nvals, eL_guess = count_evals(H,eL_guess,-1e-9)
         δN = nvals - n0
     end
     return eL_guess

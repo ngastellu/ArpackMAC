@@ -1,6 +1,6 @@
 module CoordsIO
 
-export read_xsf, read_xyz
+export read_xsf, get_frame
 
 function read_xsf(filename; read_forces=true)
     f = open(filename)
@@ -41,28 +41,47 @@ function read_xsf(filename; read_forces=true)
     end
 end
 
-using DelimitedFiles
 
-function read_xyz(filepath::AbstractString)
-    """Returns the coordinates of all atoms stored in a .xyz file. It assumes all atoms are of the same
-    element and thus does not keep track of the chemical symbols in the input file.
+function get_frame(filename, frame_index)
 
-    Parameters
-    ----------
-    filepath : AbstractString
-        Path to the .xyz file whose coordinates we wish to obtain.
+    nb_non_coord_lines::Int = 9
+    fo = open(filename)
+    
+    for i=1:3
+        readline(fo)
+    end
 
-    Returns
-    -------
-    coords : Array{Float64, 2}
-        Array of coordinates stored in the input file.
-    """
-    lines = readlines(filepath)
-    #natoms = parse(Int, strip(lines[1], chars=['#']))
-    coords = [parse.(Float64, split(strip(line), " ")[2:4]) for line in lines[3:end]]
+    Natoms = parse(Int, readline(fo))
 
-    return coords
+    pos = zeros(Float64, (Natoms,3))
+
+    nlines_per_frame = Natoms + nb_non_coord_lines
+
+    seekstart(fo)
+
+    for i=0:frame_index-1
+        for j=1:nlines_per_frame
+            readline(fo)
+        end
+    end
+
+    for i=1:nb_non_coord_lines
+        l = readline(fo)
+        if i <= 2
+            println(l)
+        end
+    end
+
+    for k in 1:Natoms
+        split_line = split(readline(fo))
+        x, y, z = split_line[2:4]
+        pos[k, :] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
+    end
+
+    close(fo)
+
+    return pos
+
 end
-
 
 end
