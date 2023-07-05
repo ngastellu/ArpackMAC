@@ -35,6 +35,7 @@ function estimate_eLUMO(H,eps_loose)
     # Here, we run an under-converged Lanczos to get a finer estimate of eLUMO.
     # This will tell us what sigma to choose when running the actual Lanczos
     while δN != 0
+        println("δN1 = $δN")
         if δN > 0 #overerestimated eLUMO
             elanczos, nconv, _, _, _ = eigs(H,nev=δN,which=:SR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
@@ -47,7 +48,9 @@ function estimate_eLUMO(H,eps_loose)
         end
         nvals, eL_guess = count_evals(H,eL_guess,-1e-9)
         δN = nvals - n0
+        println("δN2 = $δN")
     end
+    println("δN final = $δN")
     return eL_guess
 end
 
