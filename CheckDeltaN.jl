@@ -4,7 +4,7 @@ include("./SpectralLanczos.jl")
 
 using SparseArrays, PyCall, .SpectralLanczos
 
-frame_index = ARGS[1]
+function check_δN(frame_index)
 
 py"""import numpy as np
 nn = $frame_index 
@@ -24,11 +24,14 @@ println("N = $N ⟹ ntarget = $ntarget")
 n = 0
 while (δN != 0) && (n < nvals)
     global n+=1
+    println("ee[n] = $(ee[n])")
     global δN = count_evals(sparse(H),ee[n])[1] - ntarget
     println("n = $n\t δN = $δN")
     if δN > 0
         break
     end
+end
+
 end
 
 end

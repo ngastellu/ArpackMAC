@@ -50,7 +50,7 @@ for n=0:nframes-1
     N = size(H,1)
     
     if N % 2 != 0
-        
+       error("Number of atoms needs to be even! We have N = $N.") 
     end
         
 

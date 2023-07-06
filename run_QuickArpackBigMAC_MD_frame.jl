@@ -32,28 +32,35 @@ println("Constructing hamiltonian...")
 H = lindbergHtb_sparse(pos,rCC)
 println("Done!")
 
- py"""import numpy as np
-    frame = $frame_index
-    np.save(f"H-{frame}.npy",$(PyObject(H)))
-    """
+py"""import numpy as np
+frame = $frame_index
+np.save(f"H-{frame}.npy",$(PyObject(H)))
+"""
 
 N = size(H,1)
-nhalf = Int(floor(N/2))
+
+if N % 2 != 0
+    error("Number of atoms needs to be even! We have N = $N.") 
+end
+
+nhalf = Int(N/2)
 #eps_QCFFPI = 2.7e-7
 eps_tb = 1e-7
  
 print("Estimating eLUMO...")
-approx_eLUMO = estimate_eLUMO(H,eps_tb*100)
+approx_eLUMO, Rspectrum = estimate_eLUMO(H,eps_tb*100) #Rspectrum = spectral range
 print("Done! ")
 println("Estimated eLUMO = $(approx_eLUMO) eV")
+println("Spectral range = $Rspectrum eV")
 
 print("Running one-shot Lanczos... ")
-ε, ψ = one_shot_arpack_MAC(H, approx_eLUMO, 300.0, eps_tb)
+ε, ψ, iLUMO = LUMO_arpack_MAC(H, approx_eLUMO, Rspectrum)
 nconv = size(ε,1)
-println("Done! Obtained $nconv eigenvalues.")
+println("Done! Obtained $nconv eigenvalues. iLUMO = $iLUMO")
 
 py"""import numpy as np
-np.save(f"eARPACK_bigMAC.npy",$(PyObject(ε)))
-np.save(f"MOs_ARPACK_bigMAC.npy",$(PyObject(ψ)))
+ii = $iLUMO
+np.save(f"eARPACK_bigMAC_iLUMO={ii}.npy",$(PyObject(ε)))
+np.save(f"MOs_ARPACK_bigMAC_iLUMO={ii}.npy",$(PyObject(ψ)))
 """
 end
