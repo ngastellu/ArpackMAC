@@ -4,7 +4,11 @@ include("./SpectralLanczos.jl")
 
 using SparseArrays, PyCall, .SpectralLanczos
 
-function check_δN(frame_index)
+# **** NOTA BENE: This script just checks if the LUMO obtained in `run_QuickArpackBigMAC*jl` is actually the LUMO
+#                 AFTER the run is complete. It is therefore for postprocessing only. See `QuickArpackBigMAC` for
+#                 the `check_δN` function that is used DURING the run. ****
+
+frame_index = ARGS[1]
 
 py"""import numpy as np
 nn = $frame_index 

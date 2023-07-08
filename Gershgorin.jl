@@ -15,10 +15,12 @@ module Gershgorin
         
         for i=1:N
             x0 = A[i,i]
-            R = sum(A[i,:]) - x0
+            R = sum(abs.(A[i,:])) - x0
             lower = x0 - R
             upper = x0 + R
-            indiv_bounds[:,i] = [lower; upper]
+            if return_indiv_bounds
+                indiv_bounds[:,i] = [lower; upper]
+            end
             if lower < λmin
                 λmin = lower
             end
@@ -28,7 +30,11 @@ module Gershgorin
             end
 
         end
-        return λmin, λmax, indiv_bounds
+        if return_indiv_bounds
+            return λmin, λmax, indiv_bounds
+        else
+            return λmin, λmax
+        end
     end
 
     #function approx_dos(indiv_bounds)
