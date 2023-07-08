@@ -48,13 +48,13 @@ nhalf = Int(N/2)
 eps_tb = 1e-7
  
 print("Estimating eLUMO...")
-approx_eLUMO, Rspectrum = estimate_eLUMO(H,eps_tb*100) #Rspectrum = spectral range
+approx_eHOMO, Rspectrum = estimate_eHOMO(H,eps_tb*100) #Rspectrum = spectral range
 print("Done! ")
-println("Estimated eLUMO = $(approx_eLUMO) eV")
+println("Estimated eHOMO = $(approx_eLUMO) eV")
 println("Spectral range = $Rspectrum eV")
 
 print("Running one-shot Lanczos... ")
-ε, ψ, iLUMO = LUMO_arpack_MAC(H, approx_eLUMO, Rspectrum)
+ε, ψ, iLUMO = LUMO_arpack_MAC(H, approx_eHOMO, Rspectrum)
 nconv = size(ε,1)
 println("Done! Obtained $nconv eigenvalues. iLUMO = $iLUMO")
 
