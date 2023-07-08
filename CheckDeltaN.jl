@@ -10,11 +10,24 @@ using SparseArrays, PyCall, .SpectralLanczos
 
 frame_index = ARGS[1]
 
-py"""import numpy as np
-nn = $frame_index 
-H = np.load(f'H-{nn}.npy')
-ee = np.load(f'eARPACK_bigMAC-{nn}.npy')
-"""
+if size(ARGS,1) == 1
+
+    py"""import numpy as np
+    nn = $frame_index 
+    H = np.load(f'H-{nn}.npy')
+    ee = np.load(f'eARPACK_bigMAC-{nn}.npy')
+    """
+else
+    iLUMO = ARGS[2]
+
+    py"""import numpy as np
+    nn = $frame_index 
+    H = np.load(f'H-{nn}.npy')
+    ee = np.load(f'eARPACK_bigMAC_iLUMO={iLUMO}-{nn}.npy')
+    """
+end
+
+
 
 H = PyArray(py"H"o)
 ee = PyArray(py"ee"o)
@@ -27,7 +40,7 @@ println("N = $N ⟹ ntarget = $ntarget")
 
 n = 0
 while (δN != 0) && (n < nvals)
-    global n+=1
+    global n+=1 
     println("ee[n] = $(ee[n])")
     global δN = count_evals(sparse(H),ee[n])[1] - ntarget
     println("n = $n\t δN = $δN")

@@ -47,10 +47,10 @@ nhalf = Int(N/2)
 #eps_QCFFPI = 2.7e-7
 eps_tb = 1e-7
  
-print("Estimating eLUMO...")
+print("Estimating eHOMO...")
 approx_eHOMO, Rspectrum = estimate_eHOMO(H,eps_tb*100) #Rspectrum = spectral range
 print("Done! ")
-println("Estimated eHOMO = $(approx_eLUMO) eV")
+println("Estimated eHOMO = $(approx_eHOMO) eV")
 println("Spectral range = $Rspectrum eV")
 
 print("Running one-shot Lanczos... ")
