@@ -86,17 +86,22 @@ end
 function LUMO_arpack_MAC(H, eHOMO_guess, Rspectrum; eps_lanczos=1e-9, nvals=4) #Rspectrum = spectral range of H; obtained in `estimate_eHOMO` above (from Gershgorin circle thm)
     N = size(H,1)
     ugs = Rspectrum/(2*N) #This unit step value is smaller than in `estimate_eHOMO` bc we expect |δN| < 1 (the estimate of HOMO should be quite already; no need to go too crazy with the reshifts)
-    ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-2*ugs,which=:LM,maxiter=10000,tol=eps_lanczos) #take look for eigenvalues near energies decently lower than the eHOMO estimate to avoid missing HOMO and to get HOMO
+    ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-2 *ugs,which=:LM,maxiter=10000,tol=eps_lanczos) #take look for eigenvalues near energies decently lower than the eHOMO estimate to avoid missing HOMO and to get HOMO
     δN, iLUMO = check_δN(H,ε)
     ntries = 1
     while δN != 0 
         println("**** try nb. $ntries; δN = $δN **** ")
         if δN > 0
-            eHOMO_guess = ε[1] - ugs * δN
+            ε0 = ε[1] 
         else
-            eHOMO_guess = ε[end] - ugs * δN
+            ε0 = ε[end] 
         end
-        ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-1e-8,which=:LM,maxiter=10000,tol=eps_lanczos)
+        if ntries % 10 == 0
+            eHOMO_guess = ε0 - ugs * δN * 20 #if algo is stagnating, give it a big kick every 10 steps
+        else
+            eHOMO_guess = ε0 - ugs * δN
+        end
+        ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-ugs,which=:LM,maxiter=10000,tol=eps_lanczos)
         δN, iLUMO = check_δN(H,ε)
         ntries += 1
     end

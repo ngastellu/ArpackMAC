@@ -22,6 +22,7 @@ else
 
     py"""import numpy as np
     nn = $frame_index 
+    iLUMO = $iLUMO
     H = np.load(f'H-{nn}.npy')
     ee = np.load(f'eARPACK_bigMAC_iLUMO={iLUMO}-{nn}.npy')
     """
@@ -47,8 +48,6 @@ while (δN != 0) && (n < nvals)
     if δN > 0
         break
     end
-end
-
 end
 
 end

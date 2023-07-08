@@ -15,7 +15,7 @@ frame0_index = parse(Int, ARGS[2])
 nframes = parse(Int, ARGS[3])
 framestep = parse(Int, ARGS[4])
 
-const trajfile::String = "../../../lammps_MD/$(temp)K_no-rotate/dump_traj.xsf"
+const trajfile::String = "../../lammps_MD/$(temp)K_no-rotate/dump_traj.xsf"
 const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
 
 
@@ -72,7 +72,7 @@ for n=0:nframes-1
     nn = $frame_index
     ii = $iLUMO
     np.save(f"eARPACK_bigMAC_iLUMO={ii}-{nn}.npy",$(PyObject(ε)))
-    np.save(f"MOs_ARPACK_bigMAC_iLUMO={ii}-{nn}.npy",$(PyObject(ψ)))
+    np.save(f"MOs_ARPACK_bigMAC_iLUMO={ii}-{nn}.npy",$(PyObject(ψ)))    
     """
 end
 
