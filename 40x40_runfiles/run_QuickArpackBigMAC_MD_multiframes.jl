@@ -10,21 +10,24 @@ using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
 #posfile = expanduser(ARGS[1])
 #strucindex = parse(Int,split(split(split(posfile,'/')[end],'-')[2], '_')[1])
 
-temp = parse(Int, ARGS[1])
-frame0_index = parse(Int, ARGS[2])
-nframes = parse(Int, ARGS[3])
-framestep = parse(Int, ARGS[4])
+temp = 40
+frame0_index = 10000
+nframes = 3
+framestep = 1000
 
-const trajfile::String = "../../lammps_MD/$(temp)K_no-rotate/dump_traj.xsf"
+const trajfile::String = expanduser("~/Desktop/simulation_outputs/MAC_MD_lammps/40x40/$(temp)K_norotate_0-100000-500.lammpstrj")
 const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
 
 
 println("Reading coords from file: $trajfile...")
+flush(stdout)
 
 for n=0:nframes-1
 
     frame_index = frame0_index + n*framestep
     println("******** Working on frame $frame_index ********")
+    flush(stdout)
+
 
     fullpos = get_frame(trajfile, frame_index)
 
