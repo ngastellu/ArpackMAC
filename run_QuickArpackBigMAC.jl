@@ -30,7 +30,7 @@ println("Done!")
 N = size(H,1)
 nhalf = Int(floor(N/2))
 #eps_QCFFPI = 2.7e-7
-eps_tb = 1e-6
+eps_tb = 1e-7
  
 print("Estimating eLUMO...")
 approx_eLUMO = estimate_eLUMO(H,eps_tb*100)
