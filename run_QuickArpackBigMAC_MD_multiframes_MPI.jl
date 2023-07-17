@@ -12,7 +12,7 @@ MPI.Init()
 comm = MPI.COMM_WORLD
 
 nprocs = MPI.Comm_size(comm)
-rank = MPI.Comm_rank(coom)
+rank = MPI.Comm_rank(comm)
 
 
 #posfile = expanduser(ARGS[1])
@@ -31,7 +31,7 @@ println("[$rank] Reading coords from file: $trajfile...")
 flush(stdout)
 
 nframes_proc = Int(nframes/nprocs)
-frame0_proc = frame0_index + nframes_proc * framestep
+frame0_proc = frame0_index + nframes_proc * framestep * rank
 
 
 for n=0:nframes_proc-1
