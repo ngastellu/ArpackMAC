@@ -10,7 +10,7 @@ function read_xsf(filename; read_forces=false, dump=false)
             readline(f)
         end
         
-        na = parse(Int, split(readline(f)[1]))
+        na = parse(Int, split(readline(f))[1])
         
         for i=1:5
             readline(f)
