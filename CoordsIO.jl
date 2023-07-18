@@ -2,23 +2,43 @@ module CoordsIO
 
 export read_xsf, get_frame
 
-function read_xsf(filename; read_forces=true)
+function read_xsf(filename; read_forces=false, dump=false)
+    
     f = open(filename)
-    for i in 1:2
-        readline(f)
+    if dump
+        for i=1:3
+            readline(f)
+        end
+        
+        na = parse(Int, split(readline(f)[1]))
+        
+        for i=1:5
+            readline(f)
+        end
+    
+    else
+        for i in 1:2
+            readline(f)
+        end
+
+        supercell = []
+        push!(supercell, parse(Float64, split(readline(f))[1]))
+        push!(supercell, parse(Float64, split(readline(f))[2]))
+
+        for i in 1:2
+            readline(f)
+        end
+
+        na = parse(Int, split(readline(f))[1])
+
     end
 
-    supercell = []
-    push!(supercell, parse(Float64, split(readline(f))[1]))
-    push!(supercell, parse(Float64, split(readline(f))[2]))
-
-    for i in 1:2
-        readline(f)
-    end
-
-    na = parse(Int, split(readline(f))[1])
     atoms = zeros(Float64, (na, 3))
-    forces = zeros(Float64, (na, 3))
+
+    if read_forces
+        forces = zeros(Float64, (na, 3))
+    end
+    
     forces_in_file = false
 
     for k in 1:na
@@ -34,10 +54,14 @@ function read_xsf(filename; read_forces=true)
 
     close(f)
 
-    if forces_in_file && read_forces
-        return atoms, forces, supercell
+    if dump
+        return atoms
     else
-        return atoms, supercell
+        if forces_in_file && read_forces
+            return atoms, forces, supercell
+        else
+            return atoms, supercell
+        end
     end
 end
 
