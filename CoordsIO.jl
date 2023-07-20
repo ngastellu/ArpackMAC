@@ -1,6 +1,6 @@
 module CoordsIO
 
-export read_xsf, get_frame
+export read_xsf, get_frame, get_frame_bash
 
 function read_xsf(filename; read_forces=false, dump=false)
     
@@ -108,4 +108,35 @@ function get_frame(filename, frame_index)
 
 end
 
+function get_Natoms_dump(filename)
+    fo = open(filename)
+    nchars = 39 #number of chars to read before reaching line containing the number of atoms (assuming file is a dump file ⟺ line 1 = 'ITEM: TIMESTEP\n')
+    seek(fo,nchars)
+    Natoms = parse(Int, readline(fo))
+    close(fo)
+    return Natoms
+end
+
+function get_frame_bash(filename, frame_index; frame_step=1)
+    
+    nb_non_coord_lines::Int = 9
+    Natoms = get_Natoms_dump(filename)
+    nlines_per_frame = Natoms + nb_non_coord_lines
+    nlines_tail = nlines_per_frame * (Int(frame_index/frame_step) + 1)
+
+    pos = zeros(Float64, (Natoms, 3))
+
+    allpos = split(read(pipeline(`head -n $nlines_tail $filename`, `tail -n $nlines_per_frame`), String), '\n')
+    stepnb = parse(Int, allpos[2])
+    println("Step number: ", stepnb)
+
+    for i=(nb_non_coord_lines+1):nlines_per_frame
+        x, y, z = split(allpos[i])[2:4]
+        pos[i-nb_non_coord_lines,:] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
+    end
+
+    return pos
+    
+end
+    
 end
