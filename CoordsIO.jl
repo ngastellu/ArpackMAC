@@ -1,7 +1,6 @@
 module CoordsIO
 
-export read_xsf, get_frame, get_frame_bash
-
+export read_xsf, get_frame
 function read_xsf(filename; read_forces=false, dump=false)
     
     f = open(filename)
@@ -66,48 +65,6 @@ function read_xsf(filename; read_forces=false, dump=false)
 end
 
 
-function get_frame(filename, frame_index)
-
-    nb_non_coord_lines::Int = 9
-    fo = open(filename)
-    
-    for i=1:3
-        readline(fo)
-    end
-
-    Natoms = parse(Int, readline(fo))
-
-    pos = zeros(Float64, (Natoms,3))
-
-    nlines_per_frame = Natoms + nb_non_coord_lines
-
-    seekstart(fo)
-
-    for i=0:frame_index-1
-        for j=1:nlines_per_frame
-            readline(fo)
-        end
-    end
-
-    for i=1:nb_non_coord_lines
-        l = readline(fo)
-        if i <= 2
-            println(l)
-        end
-    end
-
-    for k in 1:Natoms
-        split_line = split(readline(fo))
-        x, y, z = split_line[2:4]
-        pos[k, :] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
-    end
-
-    close(fo)
-
-    return pos
-
-end
-
 function get_Natoms_dump(filename)
     fo = open(filename)
     nchars = 39 #number of chars to read before reaching line containing the number of atoms (assuming file is a dump file ⟺ line 1 = 'ITEM: TIMESTEP\n')
@@ -117,7 +74,7 @@ function get_Natoms_dump(filename)
     return Natoms
 end
 
-function get_frame_bash(filename, frame_index; frame_step=1)
+function get_frame(filename, frame_index; frame_step=1)
     
     nb_non_coord_lines::Int = 9
     Natoms = get_Natoms_dump(filename)
@@ -125,14 +82,12 @@ function get_frame_bash(filename, frame_index; frame_step=1)
     nlines_tail = nlines_per_frame * (Int(frame_index/frame_step) + 1)
 
     pos = zeros(Float64, (Natoms, 3))
+    rawpos = read(pipeline(`head -n $nlines_tail $filename`, `tail -n $Natoms`), String) #this step is the bottleneck... might need to optimise
+    allpos = split(rawpos, '\n')
 
-    allpos = split(read(pipeline(`head -n $nlines_tail $filename`, `tail -n $nlines_per_frame`), String), '\n')
-    stepnb = parse(Int, allpos[2])
-    println("Step number: ", stepnb)
-
-    for i=(nb_non_coord_lines+1):nlines_per_frame
+    for i=1:Natoms
         x, y, z = split(allpos[i])[2:4]
-        pos[i-nb_non_coord_lines,:] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
+        pos[i,:] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
     end
 
     return pos
