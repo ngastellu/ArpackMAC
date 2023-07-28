@@ -2,10 +2,10 @@ module QuickArpackBigMAC
 include("./Gershgorin.jl")
 include("./SpectralLanczos.jl")
 
-using LinearAlgebra, SparseArrays, PyCall, Arpack
+using LinearAlgebra, SparseArrays, PyCall, Arpack, Glob
 using .Gershgorin, .SpectralLanczos
 
-export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC
+export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC, rerun_LUMO_arpack_MAC
 
 
 function estimate_eHOMO(H,eps_loose)
@@ -104,6 +104,69 @@ function LUMO_arpack_MAC(H, eHOMO_guess, Rspectrum; eps_lanczos=1e-9, nvals=4) #
         ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-ugs,which=:LM,maxiter=10000,tol=eps_lanczos)
         δN, iLUMO = check_δN(H,ε)
         ntries += 1
+    end
+    return ε, ψ, iLUMO
+end
+
+function get_closest_eLUMO(nframe)
+
+    existing_efiles = glob("eARPACK_bigMAC_iLUMO*npy")
+    inds = [parse(Int, split(split(f, '.')[1], '-')[2]) for f in existing_efiles]
+    closest_frame_file_ind = argmin(abs.(nframe .- inds))
+    efile = existing_efiles[closest_frame_file_ind]
+    iLUMO_last = parse(Int, split(split(efile, '=')[2], '-')[1])
+    
+    py"""
+    import numpy as np
+    energies = np.load($efile)
+    """
+
+    last_eLUMO = PyArray(py"energies"o)[iLUMO_last]
+
+    return last_eLUMO, iLUMO_last
+
+end
+
+function rerun_LUMO_arpack_MAC(H, eHOMO_guess, Rspectrum, T, nframe; eps_lanczos=1e-9,nvals=4)
+    N = size(H,1)
+    ugs = Rspectrum/N #This unit step value is smaller than in `estimate_eHOMO` bc we expect |δN| < 1 (the estimate of HOMO should be quite already; no need to go too crazy with the reshifts)
+    ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eHOMO_guess-2 *ugs,which=:LM,maxiter=10000,tol=eps_lanczos) #take look for eigenvalues near energies decently lower than the eHOMO estimate to avoid missing HOMO and to get HOMO
+    δN, iLUMO = check_δN(H,ε)
+    ntries = 1
+    py"""import numpy as np
+    T = $T
+    distrib_params = np.load(f'../energy_distribution_params/{T}K_edistribution_params.npy')"""
+    μ_e, σ_e, emode = PyArray(py"distrib_params"o)
+    d_e = Normal(μ_e, σ_e)
+    d_ugs = Uniform(0.05,2.0)
+    while δN != 0 && ntries < 200
+        println("[frame = $nframe] **** try nb. $ntries; δN = $δN **** ")
+        if δN > 0
+            ε0 = ε[1] 
+        else
+            ε0 = ε[end] 
+        end
+        if ntries == 10
+            eLUMO_guess, iLUMO_last = get_closest_eLUMO(nframe)
+            println("[frame = $nframe]: Closest completed frame = $iLUMO_last")
+        elseif ntries == 20
+           eLUMO_guess = μ_e
+        elseif ntries == 40
+            eLUMO_guess = emode
+        elseif ntries % 10 == 0 #every 10 tries, draw new HOMO guess from
+            eLUMO_guess = rand(d_e)
+        else
+            eLUMO_guess = ε0 - ugs * δN * rand(d_ugs) #randomise shift to avoid ping-ponging between the same values
+        end
+        ε,ψ, _, _, _, _ = eigs(H,nev=nvals,sigma=eLUMO_guess-(ugs/10),which=:LM,maxiter=10000,tol=eps_lanczos)
+        δN, iLUMO = check_δN(H,ε)
+        ntries += 1
+    end
+    if δN != 0
+        println("LUMO not converged after $ntries tries; δN = $δN. Returning all 1s.")
+        ε = ones(4)
+        ψ = ones(4,4)
+        iLUMO=5
     end
     return ε, ψ, iLUMO
 end

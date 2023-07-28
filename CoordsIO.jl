@@ -74,12 +74,12 @@ function get_Natoms_dump(filename)
     return Natoms
 end
 
-function get_frame(filename, frame_index; frame_step=1)
+function get_frame(filename, frame_index; frame_step=1, frame0_index=0)
     
     nb_non_coord_lines::Int = 9
     Natoms = get_Natoms_dump(filename)
     nlines_per_frame = Natoms + nb_non_coord_lines
-    nlines_tail = nlines_per_frame * (Int(frame_index/frame_step) + 1)
+    nlines_tail = nlines_per_frame * (Int((frame_index - frame0_index)/frame_step) + 1)
 
     pos = zeros(Float64, (Natoms, 3))
     rawpos = read(pipeline(`head -n $nlines_tail $filename`, `tail -n $Natoms`), String) #this step is the bottleneck... might need to optimise
