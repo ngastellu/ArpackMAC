@@ -5,7 +5,7 @@ include("./SpectralLanczos.jl")
 using LinearAlgebra, SparseArrays, PyCall, Arpack, Glob
 using .Gershgorin, .SpectralLanczos
 
-export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC, rerun_LUMO_arpack_MAC
+export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC, rerun_LUMO_arpack_MAC, check_δN
 
 
 function estimate_eHOMO(H,eps_loose)
@@ -21,7 +21,7 @@ function estimate_eHOMO(H,eps_loose)
     # Define some useful constants
     Rspectrum = λmax - λmin
     ugs = Rspectrum/N #unit guess shift
-    n0 = 1 + Int(N/2) #number of levels STRICTLY under HOMO 
+    n0 = 1 + Int(floor(N/2)) #number of levels STRICTLY under HOMO 
     δN = nvals - n0
     
     # This approach might be too coarse... might never converge
@@ -36,7 +36,7 @@ function estimate_eHOMO(H,eps_loose)
     while δN != 0
         println("δN1 = $δN")
         if δN > 0 #overerestimated eHOMO
-            elanczos, nconv, _, _, _ = eigs(H,nev=δN,which=:SR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
+            elanczos, nconv, _, _, _ = eigs(H,nev=δN,which=:SR,sigma=eL_guess-1e-9,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
             eL_guess = elanczos[1]
         
@@ -53,33 +53,66 @@ function estimate_eHOMO(H,eps_loose)
     return eL_guess, Rspectrum
 end
 
-function check_δN(H,ε)
+function check_δN(H,ε;type="LUMO")
     N = size(H,1)
-    ntarget = Int(N/2) #nb of MOs below LUMO
+    if type == "LUMO"
+        ntarget = Int(floor(N/2)) #nb of MOs below LUMO
+    else
+        ntarget = Int(floor(N/2)) -1 #nb of MOs below HOMO
+    end
     nvals = size(ε,1)
     n = 0
     δN = 1
     while (δN != 0) && (n < nvals)
-        n+=1 
-        println("ε[$n] = $(ε[n])")
-        δN = count_evals(sparse(H),ε[n])[1] - ntarget
-        println("n = $n\t δN = $δN")
-        if δN > 0
-            println("δN = $δN > 0; exiting now n =$n (<----- should be 1)")
-            break
+        if type == "LUMO"
+            n+=1 
+            println("ε[$n] = $(ε[n])")
+            δN = count_evals(sparse(H),ε[n])[1] - ntarget
+            println("n = $n\t δN = $δN")
+            if δN > 0
+                # δN should be 1 bc if not, it means lanczos missed an eigenpair which lies in the range 
+                # of the eigenpairs we have already obtained
+                println("δN = $δN > 0; exiting now n =$n (<----- should be 1)")  
+                break
+            end
+        else
+            m = nvals - n 
+            println("ε[$m] = $(ε[m])")
+            δN = count_evals(sparse(H),ε[m])[1] - ntarget
+            println("m = $m\t δN = $δN")
+            if δN > 0
+                # δN should be nvals bc if not, it means lanczos missed an eigenpair which lies in the range 
+                # of the eigenpairs we have already obtained
+                println("δN = $δN < 0; exiting now m =$m (<----- should be $nvals)")  
+                break
+            end
+            n+=1
         end
     end
     return δN, n
 end
 
-function kBT_arpack_MAC(H,eHOMO_guess,T=300.0,eps_lanczos=2e-7)
+function kBT_arpack_MAC(H,eHOMO_guess,T=400.0,eps_lanczos=1e-8;MO_type="virtual")
     N = size(H,1)
     kB = 8.617e-5 #eV/K
-    emax = eHOMO_guess + 1.5 * kB * T
-    nvals, _ = count_evals(H,emax)
-    nev_req = nvals - Int(floor(N/2)) 
-    println("Number of requested eigenvalues =  $(nev_req)")
-    ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-1e-8,which=:LR,maxiter=10000,tol=eps_lanczos)
+    if MO_type != "virtual" && MO_type != "occupied"
+        println("[kBT_arpack_MAC] Invalid value for argument MO_type: $MO_type.\nMust be 'occupied' or 'virtual'(default).\nSetting MO_type = 'virtual'.")
+        MO_type = "virtual"
+    end
+    if MO_type == "virtual"
+        eboundary = eHOMO_guess + 3.0 * kB * T #this is the maximum energy of the states we want
+        nvals, _ = count_evals(H,eboundary)
+        nev_req = nvals - Int(floor(N/2)) 
+        println("Number of requested eigenvalues =  $(nev_req)")
+        ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-1e-8,which=:LR,maxiter=10000,tol=eps_lanczos)
+    else
+        eboundary = eHOMO_guess + 1e-9 - 1.5 * kB * T #this is the minimum energy of the states we want; add 1e-8 to eHOMO to avoid missing iti
+        println(eboundary)
+        nvals, _ = count_evals(H,eboundary)
+        nev_req = Int(floor(N/2)) - nvals
+        println("Number of requested eigenvalues =  $(nev_req)")
+        ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess+1e-9,which=:SR,maxiter=10000,tol=eps_lanczos)
+    end
     return ε,ψ
 end
 
