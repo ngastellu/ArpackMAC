@@ -8,10 +8,11 @@ module run_QuickArpackBigMAC
     using .QuickArpackBigMAC, .SpectralLanczos, .CoordsIO, .TightBinding
     using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
     
-    posfile = expanduser(ARGS[1])
+    #posfile = expanduser(ARGS[1])
     #strucindex = parse(Int,split(split(split(posfile,'/')[end],'-')[2], '_')[1])
+    posfile = "/Users/nico/Desktop/simulation_outputs/percolation/40x40/structures/bigMAC-210_relaxed.xsf"
     println("Reading coords from file: $posfile...")
-    #fullpos, _ = read_xsf(posfile; read_forces=false)
+    fullpos, _ = read_xsf(posfile; read_forces=false)
     
     const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
     
@@ -19,7 +20,7 @@ module run_QuickArpackBigMAC
     from coords_io import read_xyz
     from remove_dangling_carbons import remove_dangling_carbons
     rCC = $rCC
-    fullpos = read_xyz($posfile) 
+    fullpos = $fullpos 
     pos = remove_dangling_carbons(fullpos,$rCC)
     np.save("pos.npy", pos)
     """
@@ -29,6 +30,10 @@ module run_QuickArpackBigMAC
     println("Constructing hamiltonian...")
     H = lindbergHtb_sparse(pos,rCC)
     println("Done!")
+
+    py"""
+    np.save("H.npy", $(PyObject(H)))
+    """
     
     N = size(H,1)
     nhalf = Int(floor(N/2))
@@ -42,9 +47,9 @@ module run_QuickArpackBigMAC
     println("Estimated eHOMO = $(approx_eHOMO) eV")
     
     print("Running one-shot Lanczos... ")
-    ε, ψ = kBT_arpack_MAC(H, approx_eHOMO, T, eps_tb; MO_type="virtual")
+    ε, ψ = kBT_arpack_MAC(H, approx_eHOMO, T, eps_tb; MO_type="occupied")
     nconv = size(ε,1)
-    δN, iHOMO = check_δN(H,ε;type="LUMO")
+    δN, iHOMO = check_δN(H,ε;type="HOMO")
     println("Done! Obtained $nconv eigenvalues. iHOMO = $iHOMO")
     
     py"""import numpy as np

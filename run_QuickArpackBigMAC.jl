@@ -7,11 +7,12 @@ include("./TightBinding.jl")
 using .QuickArpackBigMAC, .SpectralLanczos, .CoordsIO, .TightBinding
 using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
 
-posfile = expanduser(ARGS[1])
+nstruc = ARGS[1]
+posfile = expanduser("~/Desktop/simulation_outputs/percolation/40x40/structures/bigMAC-$(nstruc)_relaxed.xsf")
 #strucindex = parse(Int,split(split(split(posfile,'/')[end],'-')[2], '_')[1])
 println("Reading coords from file: $posfile...")
-#fullpos, _ = read_xsf(posfile; read_forces=false)
-fullpos = get_frame(posfile, 1)
+fullpos, _ = read_xsf(posfile; read_forces=false)
+# fullpos = get_frame(posfile, 1)
 
 println(size(fullpos))
 const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
@@ -20,7 +21,6 @@ py"""import numpy as np
 from remove_dangling_carbons import remove_dangling_carbons
 rCC = $rCC
 pos = remove_dangling_carbons($(PyObject(fullpos)),$rCC)
-np.save("pos.npy", pos)
 """
 
 pos = PyArray(py"pos"o)
@@ -40,13 +40,13 @@ print("Done! ")
 println("Estimated eHOMO = $(approx_eHOMO) eV")
 
 print("Running one-shot Lanczos... ")
-ε, ψ, iLUMO = LUMO_arpack_MAC(H, approx_eHOMO, Rspectrum)
+ε, ψ = kBT_arpack_MAC(H, approx_eHOMO;MO_type="occupied")
 nconv = size(ε,1)
-println("Done! Obtained $nconv eigenvalues. iLUMO = $iLUMO")
+println("Done! Obtained $nconv eigenvalues.")
 
 py"""import numpy as np
-ii = $iLUMO
-np.save(f"eARPACK_bigMAC_iLUMO={ii}.npy",$(PyObject(ε)))
-np.save(f"MOs_ARPACK_bigMAC_iLUMO={ii}.npy",$(PyObject(ψ)))
+nn= $nstruc
+np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/eARPACK/occupied/eARPACK_bigMAC-{nn}.npy",$(PyObject(ε)))
+np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/MOs_ARPACK/occupied/MOs_ARPACK_bigMAC-{nn}.npy",$(PyObject(ψ)))
 """
 end
