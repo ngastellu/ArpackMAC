@@ -1,0 +1,5 @@
+coords_io.py
+data/
+__pycache__/
+*ARPACK*npy
+H-*.npy
