@@ -19,8 +19,9 @@ nHOMO_found = 0
 nLUMO_found = 0
 nboth_found = 0
 
-occ_starts = np.zeros(lbls_virt.shape[0], 'int')
-virt_starts = np.zeros(lbls_virt.shape[0], 'int')
+occ_starts = np.ones(lbls_virt.shape[0], 'int') * -1000
+virt_starts = np.ones(lbls_virt.shape[0], 'int') * -1000
+
 
 
 for k, n in enumerate(lbls_virt):
@@ -31,60 +32,27 @@ for k, n in enumerate(lbls_virt):
     odN = np.load(f'/Users/nico/Desktop/simulation_outputs/percolation/40x40/gap_check/occupied/odN-{n}.npy')
     vdN = np.load(f'/Users/nico/Desktop/simulation_outputs/percolation/40x40/gap_check/virtual/vdN-{n}.npy')
 
-    odN = odN[odN > 0]
-    vdN = vdN[vdN > 0]
+    odN = odN
+    vdN = vdN
 
     matching_ind = (all_lbls_virt == n).nonzero()[0]
-    print('n = ', n)
-    print('n\' = ', all_lbls_virt[matching_ind])
     N = Natoms[matching_ind]
 
     Nhalf = N // 2
 
-    if odN.shape[0] > 0:
-        odN -= (Nhalf-1)
-        zero_inds = (odN == 0).nonzero()[0]
-        if zero_inds.shape[0] == 0:
-            print(odN)
-        else:
-            iHOMO = zero_inds[0]
-            print('Found HOMO! --> iHOMO = ', iHOMO)
-            found_iHOMO = True
-            if iHOMO > 0:
-                if odN[iHOMO-1] == 1:
-                    iLUMO = iHOMO - 1
-                    found_iLUMO = True
-                    print('Found LUMO (from odN)! --> iLUMO = ', iLUMO)
-                else:
-                    print('Skipped LUMO: odN[iHOMO-1] = ', odN[iHOMO-1])
-    
-    if vdN.shape[0] > 0:
-        vdN -= Nhalf
-        zero_inds = (vdN == 0).nonzero()[0]
-        if zero_inds.shape[0] == 0:
-            print(vdN)
-        else:
-            iLUMO = zero_inds[0]
-            found_iLUMO = True
-            print('Found LUMO! --> iLUMO = ', iLUMO)
-            if iLUMO > 1:
-                if vdN[iLUMO-1] == -1:
-                    iHOMO = iLUMO - 1
-                    found_iHOMO = True
-                    print('Found HOMO (from vdN)! --> iHOMO =', iHOMO)
-                else:
-                    'Skipped HOMO: vdN[iLUMO -1] = ', vdN[iLUMO-1]
+    odN -= (Nhalf-1)
+    occ_inds = (odN <= 0).nonzero()[0]
+    occ_starts[k] = np.min(occ_inds)
+    print(occ_starts[k])
 
-    if found_iHOMO:
-        nHOMO_found += 1        
-    if found_iLUMO:
-        nLUMO_found += 1
-    if found_iHOMO and found_iLUMO:
-        nboth_found += 1
+    vdN -= Nhalf
+    virt_inds = (odN >= 0).nonzero()[0]
+    virt_starts[k] = np.min(virt_inds)
+    print(virt_starts[k])
 
     print('\n')
 
 print('*********************')
-print('Nb. HOMO found: = ', nHOMO_found)
-print('Nb. LUMO found: = ', nLUMO_found)
-print('Nb. both found: = ', nboth_found)
+print('Nb of "good" runs (i.e. even number of C atoms) = ',lbls_virt.shape[0])
+print('Nb of structures for whom all obtained virtual MOs are actually virtual = ',(virt_starts == 0).sum())
+print('Nb of structures for whom all obtained occupied MOs are actually occupied = ',(occ_starts == 0).sum())
