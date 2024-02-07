@@ -5,7 +5,7 @@ include("./SpectralLanczos.jl")
 using LinearAlgebra, SparseArrays, PyCall, Arpack, Glob
 using .Gershgorin, .SpectralLanczos
 
-export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC, rerun_LUMO_arpack_MAC, check_δN
+export estimate_eHOMO, kBT_arpack_MAC, LUMO_arpack_MAC, rerun_LUMO_arpack_MAC, check_δN, extremal_MOs
 
 
 function estimate_eHOMO(H,eps_loose)
@@ -204,4 +204,8 @@ function rerun_LUMO_arpack_MAC(H, eHOMO_guess, Rspectrum, T, nframe; eps_lanczos
     return ε, ψ, iLUMO
 end
 
+function extremal_MOs(H;nvals=50,eps_lanczos=1e-9)
+        εlo,ψlo, _, _, _, _ = eigs(H,nev=nvals,which=:SR,maxiter=100000,tol=eps_lanczos)
+        εhi,ψhi, _, _, _, _ = eigs(H,nev=nvals,which=:LR,maxiter=100000,tol=eps_lanczos)
+        return εlo,ψlo,εhi,ψhi 
 end
