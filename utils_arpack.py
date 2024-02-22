@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from os import path
 from qcnico.coords_io import read_xsf
 from qcnico.remove_dangling_carbons import remove_dangling_carbons
 from qcnico import plt_utils
@@ -8,11 +9,11 @@ from qcnico import plt_utils
 
 def gen_mos(Mdir,lbls,filename_template='MOs_ARPACK_bigMAC'):
     for nn in lbls:
-        yield np.load(Mdir+f'/{filename_template}-{nn}.npy')
+        yield np.load(Mdir+f'{filename_template}-{nn}.npy')
 
 def gen_energies(edir,lbls,filename_template='eARPACK_bigMAC'):
     for nn in lbls:
-        yield np.load(edir+f'/{filename_template}-{nn}.npy')
+        yield np.load(edir+f'{filename_template}-{nn}.npy')
 
 
 def gen_pos(posdir, lbls, rCC):
@@ -50,6 +51,16 @@ def find_redundant_MOs(e1,e2,M1,M2,e_eps=1e-4,M_eps=1e-5):
         isame = (inner_products > 1-M_eps).nonzero()
         if len(isame) > 0:
             return ii[isame], jj[isame]
-    return None
+    return [[],[]]
 
-   
+def gen_grouped_eigenpairs(edirs,Mdirs,lbls,efilename_templates, Mfilename_templates):
+    energies_gen = [gen_energies(edir, lbls,efnt) for (edir, efnt) in zip(edirs, efilename_templates)]
+    mos_gen = [gen_mos(Mdir, lbls, mfnt) for (Mdir, mfnt) in zip(edirs, Mfilename_templates)]
+    for nn in lbls:
+        energies = np.hstack([egen.next() for egen in energies_gen])
+        MOs = np.hstack([mgen.next() for mgen in mos_gen])
+        isorted = np.argsort(energies)
+        energies = energies[isorted]
+        MOs = MOs[:,isorted]
+
+        yield energies, MOs
