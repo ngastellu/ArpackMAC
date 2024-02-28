@@ -119,7 +119,7 @@ function nn_pairdists_full_vec(pos,rNN)
     return nn_pairdists, ii, jj
 end
 
-function lindbergHtb_sparse(pos,rNN;return_data=true)
+function lindbergHtb_sparse(pos,rNN;return_data=false)
     β0 = -2.438 #eV
     kb = 0.405 #angstrom^-1
     R0 = 1.397 #angstrom

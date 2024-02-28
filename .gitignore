@@ -4,3 +4,4 @@ data/
 __pycache__/
 *ARPACK*npy
 H-*.npy
+redundant_MO_inds_lo-116.npy
