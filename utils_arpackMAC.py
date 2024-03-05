@@ -5,6 +5,7 @@ from os import path
 from qcnico.coords_io import read_xsf
 from qcnico.remove_dangling_carbons import remove_dangling_carbons
 from qcnico import plt_utils
+from qcnico.qcffpi_io import read_energies, read_MO_file, read_Hao
 
 
 def gen_mos(Mdir,lbls,filename_template='MOs_ARPACK_bigMAC'):
@@ -59,7 +60,7 @@ def remove_redundant_eigenpairs(e,M,e_eps=1e-6,M_eps=1e-6):
     the redundancies. The redundant eigenpairs are found using the method as `find_redundant_MOs`."""
     dE = e[:,None] - e
     ij = np.vstack(np.abs(dE < e_eps).nonzero())
-    ij = ij[(ij[0,:] - ij[1,:] > 0)] # remove self-differences and equivalent differences
+    ij = ij[:,(ij[0,:] - ij[1,:] > 0)] # remove self-differences and equivalent differences
 
     if ij.shape[1] > 0:
         print(f'!! Found {ij.shape[1]} energy differences smaller than {e_eps} !!', flush=True)
@@ -98,3 +99,26 @@ def gen_grouped_eigenpairs(edirs,Mdirs,lbls,efilename_templates, Mfilename_templ
             MOs = MOs[:,isorted]
 
         yield energies, MOs
+
+
+def gen_Hao_qcffpi(lbls,natoms,Hdir,filename_template='Hao-'):
+    for l, N in zip(lbls, natoms):
+        yield read_Hao(Hdir + filename_template + f'{l}.dat', N)
+
+def gen_energies_qcffpi(lbls,natoms,edir,filename_template):
+    for l, N in zip(lbls, natoms):
+        yield read_energies(edir + filename_template + f'{l}.dat', N)
+
+def gen_pos_MOs(lbls,Mdir,filename_template,natoms=None,return_pos=True):
+    for k, l in enumerate(lbls):
+        if natoms is None:
+            if return_pos:
+                yield read_MO_file(Mdir + filename_template + f'-{l}.dat')
+            else:
+                yield read_MO_file(Mdir + filename_template + f'-{l}.dat')[1]
+        else:
+            if return_pos:
+                yield read_MO_file(Mdir + filename_template + f'-{l}.dat',Natoms=natoms[k])
+            else:
+                yield read_MO_file(Mdir + filename_template + f'-{l}.dat',Natoms=natoms[k])
+            
