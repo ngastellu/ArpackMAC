@@ -23,5 +23,14 @@ del hvals_unrelaxed
 
 Hdir_40x40 = '/Users/nico/Desktop/simulation_outputs/percolation/40x40/Hao_ARPACK/hvals/'
 hvals_40x40 = np.hstack([np.load(f)] for f in glob(Hdir_40x40 + '*.npy')) 
-multiple_histograms((hvals_40x40, hvals_relaxed),('Micheal MAC', 'AtaT1 MAC'),nbins=1000,xlabel='$H_{ij}$ [eV]')
 
+Hdir_10x10 = '/Users/nico/Desktop/simulation_outputs/percolation/10x10/Hao_ARPACK/hvals/'
+hvals_10x10 = np.hstack([np.load(f)] for f in glob(Hdir_10x10 + '*.npy')) 
+
+mean_size_40x40 = np.mean([np.load(f).shape for f in glob(Hdir_40x40 + '*.npy')])
+mean_size_relaxed = np.mean([np.load(f).shape for f in glob(Hdir_relaxed + '*.npy')])
+
+print('Avg nb of hvals relaxed: ', mean_size_relaxed)
+print('Avg nb of hvals 40x40: ', mean_size_40x40)
+
+multiple_histograms((np.log(-hvals_40x40), np.log(-hvals_10x10)),('$40\\times 40$', '$10\\times10$'),nbins=1000,xlabel='$H_{ij}$ [eV]', normalised=True)
