@@ -2,13 +2,16 @@ module CheckSemicircularDOS
 
 include("./TightBinding.jl")
 
-using LinearAlgebra, PyCall, statistics
+using LinearAlgebra, PyCall, Statistics
 
 
 nn = ARGS[1]
+N = parse(Int, ARGS[2])
 
-μ = 0
-σ = 1.0
+println("Running on structure $nn")
+
+μ = -2.39415246
+σ = 0.13658531
 
 
 py"""import numpy as np
@@ -20,14 +23,11 @@ jj = np.load(f'hamiltonians/inds/jj-{n}.npy')
 ii = PyArray(py"ii"o)
 jj = PyArray(py"jj"o)
 
-# estimate N using max index of nonzero elements
-Ni = maximum(ii)
-Nj = maximum(jj)
-N = maximum((Ni,Nj))
+println("Number of atoms = $N\nConstructing hamiltonian...")
 
 nb_elems = size(ii,1)
 
-hvals = μ + σ * randn(nb_elems)
+hvals = μ .+ (σ .* randn(nb_elems))
 
 Hgaussian = zeros((N,N))
 
@@ -38,7 +38,11 @@ for k=1:nb_elems
    Hgaussian[i,j] = h
 end
 
+println("Done! Diagonalising...")
+
 eigvals = LAPACK.syev!('N','U', Hgaussian)
+
+println("Done!")
 
 py"""
 n = $nn
