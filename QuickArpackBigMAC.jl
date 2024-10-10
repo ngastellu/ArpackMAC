@@ -204,9 +204,9 @@ function rerun_LUMO_arpack_MAC(H, eHOMO_guess, Rspectrum, T, nframe; eps_lanczos
     return ε, ψ, iLUMO
 end
 
-function extremal_MOs(H;nvals=50,eps_lanczos=1e-9)
-        εlo,ψlo, _, _, _, _ = eigs(H,nev=nvals,which=:SR,maxiter=100000,tol=eps_lanczos)
-        εhi,ψhi, _, _, _, _ = eigs(H,nev=nvals,which=:LR,maxiter=100000,tol=eps_lanczos)
+function extremal_MOs(H;nvals_lo=50,nvals_hi=50,eps_lanczos=1e-9)
+        εlo,ψlo, _, _, _, _ = eigs(H,nev=nvals_lo,which=:SR,maxiter=100000,tol=eps_lanczos)
+        εhi,ψhi, _, _, _, _ = eigs(H,nev=nvals_hi,which=:LR,maxiter=100000,tol=eps_lanczos)
         return εlo,ψlo,εhi,ψhi 
 end
 

@@ -87,7 +87,7 @@ module SpectralLanczos
         bbl = diffs .< eps_diff
         dotprods = vec(abs.(evecs[:,k]' * evecs))
         bbc = dotprods .> eps_ortho
-        bbc[k], bbl[k] = false, false
+        bbc[k], bbl[k] = false, false # ignore self
         match = all(bbc .== bbl)
         if sum(!match) > 1
           mismatch_inds = findall(bbc .!= bbl)
@@ -194,7 +194,7 @@ module SpectralLanczos
           eps_ortho = 0.01 #orthogonality condition needs to be STRONGLY relaxed when comparing Ritz vecs from different iterations
         end
         dpbools = dotprods .< eps_ortho
-        good_mask = vec(all(dpbools, dims=2)) #duplicate eigenvector is one whose dot product is nonzero with other eigenvectors
+        good_mask = vec(all(dpbools, dims=2)) #duplicate eigenvector is one whose dot product is nonzero with other eigenvectors (assuming non-degenerate spectrum)
         if !all(good_mask)
           bad_mask = map(!,good_mask)
           for j ∈ findall(bad_mask)
