@@ -28,24 +28,42 @@ module GetExtremalMOs
     end
 
 
-    py"""
-    import numpy as np
-    evenN_lbls = np.load('evenN_lbls.npy')
-    """
 
-    lbls = PyArray(py"evenN_lbls"o)
-    rCC = 1.8
-    T = 400 #K
-
-    ii = parse(Int, ARGS[1])
-    n = lbls[ii]
-  
+	# ---------- MAIN ----------
+	
+	n = parse(Int, ARGS[1])
+	structure_type = ARGS[2]
     
     println("**** $n ****")
     
+	
+	println("Parsing atomic coords...")
 
-    natoms_file = "natoms_even.npy"
-    natoms = PyArray(py"np.load($natoms_file)"o)
+    py"""import numpy as np
+from qcnico.coords_io import read_xyz
+from os import path
+
+nn = $n
+stype = $structure_type
+rcc = $rCC
+
+pos = read_xyz(path.expanduser(f'~/scratch/clean_bigMAC/{stype}/relaxed_structures_no_dangle/{stype}n{nn}_relaxed_no-dangle.xyz'))
+    """
+	
+	pos = PyArray(py"pos"o)
+	
+	
+	N = size(pos,1)
+
+    println("Done! N = $N")
+	
+	if N % 2 == 1
+		println("!!! WARNING: odd nb of atoms !!!")
+	end
+
+
+    rCC = 1.8
+    T = 400 #K 
 
     ii_file = "hamiltonians/inds/ii-$n.npy"
     iii = PyArray(py"np.load($ii_file)"o)
@@ -55,8 +73,6 @@ module GetExtremalMOs
 
     hvals_file = "hamiltonians/hvals/hvals-$n.npy"
     hvals = PyArray(py"np.load($hvals_file)"o)
-
-    N = natoms[ii]
  
     println("Constructing hamiltonian...")
     H = sparse(iii,jj,hvals,N,N)
@@ -68,14 +84,12 @@ module GetExtremalMOs
 
     εlo,ψlo,εhi,ψhi = extremal_MOs(H;nvals_lo=nvals_lo,nvals_hi=nvals_hi)
 
-    py"""
-    nn = $n
-    np.save(f'energies/lo/eARPACK_lo_bigMAC-{nn}.npy', $(PyObject(εlo)))
-    np.save(f'MOs/lo/MOs_ARPACK_lo_bigMAC-{nn}.npy', $(PyObject(ψlo)))
-    np.save(f'energies/hi/eARPACK_hi_bigMAC-{nn}.npy', $(PyObject(εhi)))
-    np.save(f'MOs/hi/MOs_ARPACK_hi_bigMAC-{nn}.npy', $(PyObject(ψhi)))
-    """
     
 
-
+    py"""nn = $n
+stype = $structure_type
+np.save(f'energies/lo/eARPACK_lo_{stype}-{nn}.npy', $(PyObject(εlo)))
+np.save(f'MOs/lo/MOs_ARPACK_lo_{stype}-{nn}.npy', $(PyObject(ψlo)))
+np.save(f'energies/hi/eARPACK_hi_{stype}-{nn}.npy', $(PyObject(εhi)))
+np.save(f'MOs/hi/MOs_ARPACK_hi_{stype}-{nn}.npy', $(PyObject(ψhi)))"""
 end
