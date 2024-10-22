@@ -56,9 +56,9 @@ end
 function check_δN(H,ε;type="LUMO")
     N = size(H,1)
     if type == "LUMO"
-        ntarget = Int(floor(N/2)) #nb of MOs below LUMO
+        ntarget = Int(ceil(N/2)) #nb of MOs below LUMO
     else
-        ntarget = Int(floor(N/2)) -1 #nb of MOs below HOMO
+        ntarget = Int(ceil(N/2)) -1 #nb of MOs below HOMO
     end
     nvals = size(ε,1)
     n = 0
@@ -92,7 +92,7 @@ function check_δN(H,ε;type="LUMO")
     return δN, n
 end
 
-function kBT_arpack_MAC(H,eHOMO_guess,T=400.0,eps_lanczos=1e-8;MO_type="virtual")
+function kBT_arpack_MAC(H,eHOMO_guess,T=400.0,eps_lanczos=1e-8;MO_type="virtual",keep_HOMO=false)
     N = size(H,1)
     kB = 8.617e-5 #eV/K
     if MO_type != "virtual" && MO_type != "occupied"
@@ -102,9 +102,13 @@ function kBT_arpack_MAC(H,eHOMO_guess,T=400.0,eps_lanczos=1e-8;MO_type="virtual"
     if MO_type == "virtual"
         eboundary = eHOMO_guess + 3.0 * kB * T #this is the maximum energy of the states we want
         nvals, _ = count_evals(H,eboundary)
-        nev_req = nvals - Int(floor(N/2)) 
+        if keep_HOMO
+            nev_req = nvals - Int(ceil(N/2)) + 1 # nb of MOs between HOMO and boundary energy
+        else
+            nev_req = nvals - Int(ceil(N/2)) # nb of MOs between LUMO and boundary energy
+        end
         println("Number of requested eigenvalues =  $(nev_req)")
-        ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-1e-8,which=:LR,maxiter=10000,tol=eps_lanczos)
+        ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-5e-7,which=:LR,maxiter=10000,tol=eps_lanczos)
     else
         eboundary = eHOMO_guess + 1e-9 - 1.5 * kB * T #this is the minimum energy of the states we want; add 1e-8 to eHOMO to avoid missing iti
         println(eboundary)
