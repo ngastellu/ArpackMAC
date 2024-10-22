@@ -30,7 +30,7 @@ H = lindbergHtb_sparse(pos,rCC)
 println("Done!")
 
 N = size(H,1)
-nhalf = Int(floor(N/2))
+nhalf = Int(ceil(N/2))
 #eps_QCFFPI = 2.7e-7
 eps_tb = 1e-7
  
@@ -40,13 +40,16 @@ print("Done! ")
 println("Estimated eHOMO = $(approx_eHOMO) eV")
 
 print("Running one-shot Lanczos... ")
-ε, ψ = kBT_arpack_MAC(H, approx_eHOMO;MO_type="occupied")
+ε, ψ = kBT_arpack_MAC(H, approx_eHOMO;MO_type="virtual",keep_HOMO=true)
 nconv = size(ε,1)
 println("Done! Obtained $nconv eigenvalues.")
 
+δn = count_evals(H, ε[1])[1] - (nhalf - 1)
+println("lvldiff δn = $(δn) (should be 0)")
+
 py"""import numpy as np
 nn= $nstruc
-np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/eARPACK/occupied/eARPACK_bigMAC-{nn}.npy",$(PyObject(ε)))
-np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/MOs_ARPACK/occupied/MOs_ARPACK_bigMAC-{nn}.npy",$(PyObject(ψ)))
+np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/eARPACK/virtual_w_HOMO/eARPACK_bigMAC-{nn}.npy",$(PyObject(ε)))
+np.save(f"/Users/nico/Desktop/simulation_outputs/percolation/40x40/MOs_ARPACK/virtual_w_HOMO/MOs_ARPACK_bigMAC-{nn}.npy",$(PyObject(ψ)))
 """
 end
