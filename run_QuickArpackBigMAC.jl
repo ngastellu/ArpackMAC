@@ -9,9 +9,9 @@ using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
 nstruc = ARGS[1]
 structype = ARGS[2]
 if structype == "40x40"
-    posfile = expanduser("~/scratch/$(structype)/relaxed_structures_no_dangle/bigMAC-$(nstruc)_relaxed.xyz")
+    posfile = expanduser("~/scratch/clean_bigMAC/$(structype)/relaxed_structures_no_dangle/bigMAC-$(nstruc)_relaxed_no-dangle.xyz")
 else
-    posfile = expanduser("~/scratch/$(structype)/relaxed_structures_no_dangle/$(structype)n$(nstruc)_relaxed.xyz")
+    posfile = expanduser("~/scratch/clean_bigMAC/$(structype)/relaxed_structures_no_dangle/$(structype)n$(nstruc)_relaxed_no-dangle.xyz")
 end
 #strucindex = parse(Int,split(split(split(posfile,'/')[end],'-')[2], '_')[1])
 println("Reading coords from file: $posfile...")
@@ -24,7 +24,7 @@ nn = $nstruc
 
 hvals = np.load(f'hamiltonians/hvals/hvals-{nn}.npy')
 ii = np.load(f'hamiltonians/inds/ii-{nn}.npy')
-ii = np.load(f'hamiltonians/inds/ii-{nn}.npy')
+jj = np.load(f'hamiltonians/inds/jj-{nn}.npy')
 """
 
 pos = PyArray(py"pos"o)
