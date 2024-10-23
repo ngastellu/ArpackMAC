@@ -1,32 +1,42 @@
 module run_QuickArpackBigMAC
 include("./QuickArpackBigMAC.jl")
 include("./SpectralLanczos.jl")
-include("./CoordsIO.jl")
 include("./TightBinding.jl")
 
-using .QuickArpackBigMAC, .SpectralLanczos, .CoordsIO, .TightBinding
+using .QuickArpackBigMAC, .SpectralLanczos, .TightBinding
 using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
 
 nstruc = ARGS[1]
-posfile = expanduser("~/Desktop/simulation_outputs/percolation/40x40/structures/bigMAC-$(nstruc)_relaxed.xsf")
+structype = ARGS[2]
+if structype == "40x40"
+    posfile = expanduser("~/scratch/$(structype)/relaxed_structures_no_dangle/bigMAC-$(nstruc)_relaxed.xyz")
+else
+    posfile = expanduser("~/scratch/$(structype)/relaxed_structures_no_dangle/$(structype)n$(nstruc)_relaxed.xyz")
+end
 #strucindex = parse(Int,split(split(split(posfile,'/')[end],'-')[2], '_')[1])
 println("Reading coords from file: $posfile...")
-fullpos, _ = read_xsf(posfile; read_forces=false)
-# fullpos = get_frame(posfile, 1)
 
-println(size(fullpos))
-const rCC::Float64 = 1.8 #max nearest neighbour distance in angstrom
+py"""from qcnico.coords_io import read_xyz
+import numpy as np
+posfile=$posfile
+pos = read_xyz(posfile)
+nn = $nstruc
 
-py"""import numpy as np
-from remove_dangling_carbons import remove_dangling_carbons
-rCC = $rCC
-pos = remove_dangling_carbons($(PyObject(fullpos)),$rCC)
+hvals = np.load(f'hamiltonians/hvals/hvals-{nn}.npy')
+ii = np.load(f'hamiltonians/inds/ii-{nn}.npy')
+ii = np.load(f'hamiltonians/inds/ii-{nn}.npy')
 """
 
 pos = PyArray(py"pos"o)
+N = size(pos,1)
+
+ii = PyArray(py"ii"o)
+jj = PyArray(py"jj"o)
+hvals = PyArray(py"hvals"o)
 
 println("Constructing hamiltonian...")
-H = lindbergHtb_sparse(pos,rCC)
+H = sparse(ii, jj, hvals, N, N)
+H += H'
 println("Done!")
 
 N = size(H,1)
