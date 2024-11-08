@@ -104,11 +104,12 @@ function kBT_arpack_MAC(H,eHOMO_guess,T=400.0,eps_lanczos=1e-8;MO_type="virtual"
         nvals, _ = count_evals(H,eboundary)
         if keep_HOMO
             nev_req = nvals - Int(ceil(N/2)) + 1 # nb of MOs between HOMO and boundary energy
+			ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-1e-6,which=:LR,maxiter=10000,tol=eps_lanczos)
         else
             nev_req = nvals - Int(ceil(N/2)) # nb of MOs between LUMO and boundary energy
+			ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess+1e-7,which=:LR,maxiter=10000,tol=eps_lanczos)
         end
         println("Number of requested eigenvalues =  $(nev_req)")
-        ε,ψ, _, _, _, _ = eigs(H,nev=nev_req,sigma=eHOMO_guess-5e-7,which=:LR,maxiter=10000,tol=eps_lanczos)
     else
         eboundary = eHOMO_guess + 1e-9 - 1.5 * kB * T #this is the minimum energy of the states we want; add 1e-8 to eHOMO to avoid missing iti
         println(eboundary)
