@@ -6,13 +6,18 @@ module CheckBandGaps
     
     using .SpectralLanczos, .TightBinding, .CoordsIO, PyCall, Base.Filesystem
 
-    py"""
-    import numpy as np
-    vir_lbls = np.load('vir_lbls.npy')
-    """
 
-    lbls = PyArray(py"vir_lbls"o)[1:2]
-    rCC = 1.8
+    structype = basename(pwd())
+
+    if structype == "40x40"
+        lbls = 1:300
+    elseif structype == "tempdot6"
+        lbls = 0:217
+    elseif structype == "tempdot5"
+        lbls = 0:216
+    else
+        throw(ArgumentError(structype, "not valid sAMC ensemble.")
+    end
 
     for (k, n) ∈ enumerate(lbls)
         println("**** $n ****")
