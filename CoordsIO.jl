@@ -65,9 +65,14 @@ function read_xsf(filename; read_forces=false, dump=false)
 end
 
 
-function get_Natoms_dump(filename)
+function get_Natoms_dump(filename;frame0_index=0)
     fo = open(filename)
-    nchars = 39 #number of chars to read before reaching line containing the number of atoms (assuming file is a dump file ⟺ line 1 = 'ITEM: TIMESTEP\n')
+    if frame0_index == 0
+        ndigits = 1
+    else
+        ndigits = Int(floor(log10(frame0_index))) + 1
+    end
+    nchars = 38 + ndigits #number of chars to read before reaching line containing the number of atoms (assuming file is a dump file ⟺ line 1 = 'ITEM: TIMESTEP\n')
     seek(fo,nchars)
     Natoms = parse(Int, readline(fo))
     close(fo)
@@ -77,7 +82,7 @@ end
 function get_frame(filename, frame_index; frame_step=1, frame0_index=0)
     
     nb_non_coord_lines::Int = 9
-    Natoms = get_Natoms_dump(filename)
+    Natoms = get_Natoms_dump(filename;frame0_index=frame0_index)
     nlines_per_frame = Natoms + nb_non_coord_lines
     nlines_tail = nlines_per_frame * (Int((frame_index - frame0_index)/frame_step) + 1)
 
