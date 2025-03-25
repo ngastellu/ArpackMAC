@@ -1,8 +1,8 @@
-module ArpackMAC
+module QCFFPICompare
 include("./SpectralLanczos.jl")
 using PyCall, SparseArrays, Arpack, .SpectralLanczos
 
-export arpackMAC, read_energies, ekBT_ind
+export compare_arpack_vs_qcffpi, read_energies, ekBT_ind
 
 
 
@@ -37,7 +37,7 @@ function ekBT_ind(energies,T=300.0,lumo_ref=false)
     end
 end
 
-function arpackMAC(k,structure_index=64)
+function compare_arpack_vs_qcffpi(k,structure_index=64)
     eps_qcff_Ha = 1e-8
     Ha2eV = 27.2114
     eps_qcff_eV = eps_qcff_Ha * Ha2eV 
