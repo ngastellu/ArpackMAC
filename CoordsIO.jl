@@ -5,8 +5,8 @@ export read_xsf, read_xyz, get_frame
 function read_xyz(filename)
     f = open(filename)
 
-    natoms = parse(Int, strip(readline(f))) # first line contains number of atoms
-    symbols = empty(String,natoms)
+    na = parse(Int, strip(readline(f))) # first line contains number of atoms
+    symbols = Vector{String}(undef, na)
     pos = zeros(Float64,(3,na))
 
     readline(f) #skip second line
