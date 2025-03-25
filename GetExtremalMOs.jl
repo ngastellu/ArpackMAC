@@ -37,7 +37,7 @@ module GetExtremalMOs
     T = 400 #K 
 	n = ARGS[1]
 	structype = ARGS[2]
-	posfile = "samples/truncated_$structype-$n.xyz"
+	posfile = expanduser("~/scratch/clean_bigMAC/final_sAMC_structures/$(structype)/$structype-$n.xyz")
 
     
 	

@@ -1,6 +1,27 @@
 module CoordsIO
 
-export read_xsf, get_frame
+export read_xsf, read_xyz, get_frame
+
+function read_xyz(filename)
+    f = open(filename)
+
+    natoms = parse(Int, strip(readline(f))) # first line contains number of atoms
+    symbols = empty(String,natoms)
+    pos = zeros(Float64,(3,na))
+
+    readline(f) #skip second line
+
+    for k=1:na
+        split_line = split(strip(readline(f)))
+        symbols[k] = split_line[1]
+        x, y, z = split_line[2:4]
+        pos[:,k] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
+    end
+
+    return symbols, transpose(pos)
+end
+
+
 function read_xsf(filename; read_forces=false, dump=false)
     
     f = open(filename)
