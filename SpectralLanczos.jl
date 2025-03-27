@@ -4,19 +4,24 @@ module SpectralLanczos
   export spectral_shift_lanczos, count_evals, get_resids, sort_eigenpairs!, safe_eigs
 
 
-    function safe_eigs(A::SparseMatrixCSC, nev::Int; which=:LM, sigma=nothing,tol=0.0,maxiter=300,ritzvec=true,check=0,eps_shift=1e-8)
+    function safe_eigs(A::SparseMatrixCSC; nev=30, which=:LM, sigma=nothing,tol=0.0,maxiter=300,ritzvec=true,check=0,eps_shift=1e-8)
       # Wrapper for Arpack's `eigs` function which catches ZeroPivotError, if `sigma` is too close an eigenvalues
-      out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
-      while !issuccess(out)
-        if which == :LR
-          println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma+eps_shift)")
-          sigma += eps_shift #shift up if we want to eigvals greater than `sigma`
-        else 
-          println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma-eps_shift)")
-          sigma -= eps_shift #shift down otherwise
-        end
+      try
         out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+      catch LoadError
+        fail = true
+        while fail
+          if which == :LR
+            println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma+eps_shift)")
+            sigma += eps_shift #shift up if we want to eigvals greater than `sigma`
+          else 
+            println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma-eps_shift)")
+            sigma -= eps_shift #shift down otherwise
+          end
+          out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+        end
       end
+      return out
     end
 
     function count_evals(A::SparseMatrixCSC, shift::Number, eps_shift::Number=1e-9)
