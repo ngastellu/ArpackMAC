@@ -1,13 +1,29 @@
 module SpectralLanczos
   using LinearAlgebra, Arpack, SparseArrays, Printf, Statistics
 
-  export spectral_shift_lanczos, count_evals, get_resids, sort_eigenpairs!
+  export spectral_shift_lanczos, count_evals, get_resids, sort_eigenpairs!, safe_eigs
+
+
+    function safe_eigs(A::SparseMatrixCSC, nev::Int; which=:LM, sigma=nothing,tol=0.0,maxiter=300,ritzvec=true,check=0,eps_shift=1e-8)
+      # Wrapper for Arpack's `eigs` function which catches ZeroPivotError, if `sigma` is too close an eigenvalues
+      out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+      while !issuccess(out)
+        if which == :LR
+          println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma+eps_shift)")
+          sigma += eps_shift #shift up if we want to eigvals greater than `sigma`
+        else 
+          println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma-eps_shift)")
+          sigma -= eps_shift #shift down otherwise
+        end
+        out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+      end
+    end
 
     function count_evals(A::SparseMatrixCSC, shift::Number, eps_shift::Number=1e-9)
       # Counts the number of eigenvalues of A which are < mu
       l = ldlt(A,shift=-shift,check=false)
       while !issuccess(l)
-        println("ZPE encountered! old shift = $shift ---> new shift =$(shift+eps_shift)")
+        println("[count_evals] ZPE encountered! old shift = $shift ---> new shift =$(shift+eps_shift)")
         shift += eps_shift #eps_shift = a very small nb to add to the shift in case of a ZeroPivotError
         l = ldlt(A,shift=-shift,check=false) #this should fix the issue 
       end
