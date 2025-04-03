@@ -6,11 +6,15 @@ module SpectralLanczos
 
     function safe_eigs(A::SparseMatrixCSC; nev=30, which=:LM, sigma=nothing,tol=0.0,maxiter=300,ritzvec=true,check=0,eps_shift=1e-8)
       # Wrapper for Arpack's `eigs` function which catches ZeroPivotError, if `sigma` is too close an eigenvalues
-      try
-        out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
-      catch LoadError
-        fail = true
-        while fail
+      success = false
+      itry=0
+      while !success
+        try
+          itry += 1
+          println("Attempt nb. $itry")
+          out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+          success = true
+        catch LoadError
           if which == :LR
             println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma+eps_shift)")
             sigma += eps_shift #shift up if we want to eigvals greater than `sigma`
@@ -18,9 +22,10 @@ module SpectralLanczos
             println("[safe_eigs] ZPE encountered! old sigma = $sigma ---> new sigma =$(sigma-eps_shift)")
             sigma -= eps_shift #shift down otherwise
           end
-          out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
+          # out = eigs(A;nev=nev,which=which,sigma=sigma,tol=tol,maxiter=maxiter,ritzvec=ritzvec,check=check)
         end
       end
+      println("[safe_eigs] Done!")
       return out
     end
 
