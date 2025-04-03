@@ -8,7 +8,8 @@ using LinearAlgebra, SparseArrays, PyCall, Base.Filesystem
 
 nstruc = ARGS[1]
 structype = ARGS[2]
-posfile = expanduser("~/scratch/clean_bigMAC/final_sAMC_structures/$(structype)/$(structype)-$(nstruc).xyz")
+tsoft = split(structype, '-')[2]
+posfile = expanduser("~/scratch/clean_bigMAC/final_sAMC_structures/$(structype)/sAMC$(tsoft)-$(nstruc).xyz")
 println("Reading coords from file: $posfile...")
 
 py"""from qcnico.coords_io import read_xyz

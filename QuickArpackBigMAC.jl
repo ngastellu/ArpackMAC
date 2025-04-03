@@ -36,12 +36,12 @@ function estimate_eHOMO(H,eps_loose)
     while δN != 0
         println("δN1 = $δN")
         if δN > 0 #overerestimated eHOMO
-            elanczos, nconv, _, _, _ = safe_eigs(H;nev=δN,which=:SR,sigma=eL_guess-1e-9,ritzvec=false,tol=eps_loose,check=1)
+            elanczos, nconv, _, _, _ = safe_eigs(H,nev=δN,which=:SR,sigma=eL_guess-1e-9,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
             eL_guess = elanczos[1]
         
         elseif δN < 0 #understimated eHOMO
-            elanczos, nconv, _, _, _ = safe_eigs(H;nev=-δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
+            elanczos, nconv, _, _, _ = safe_eigs(H,nev=-δN,which=:LR,sigma=eL_guess,ritzvec=false,tol=eps_loose,check=1)
             sort!(elanczos)
             eL_guess = elanczos[end]
         end

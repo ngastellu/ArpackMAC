@@ -37,7 +37,8 @@ module GetExtremalMOs
     T = 400 #K 
 	n = ARGS[1]
 	structype = ARGS[2]
-	posfile = expanduser("~/scratch/clean_bigMAC/final_sAMC_structures/$(structype)/$structype-$n.xyz")
+	tsoft = split(structype, '-')[2]
+	posfile = expanduser("~/scratch/clean_bigMAC/final_sAMC_structures/$(structype)/sAMC$tsoft-$n.xyz")
 
     
 	
