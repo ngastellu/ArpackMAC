@@ -1,6 +1,27 @@
 module CoordsIO
 
-export read_xsf, get_frame
+export read_xsf, read_xyz, get_frame
+
+function read_xyz(filename)
+    f = open(filename)
+
+    na = parse(Int, strip(readline(f))) # first line contains number of atoms
+    symbols = Vector{String}(undef, na)
+    pos = zeros(Float64,(3,na))
+
+    readline(f) #skip second line
+
+    for k=1:na
+        split_line = split(strip(readline(f)))
+        symbols[k] = split_line[1]
+        x, y, z = split_line[2:4]
+        pos[:,k] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
+    end
+
+    return pos, symbols
+end
+
+
 function read_xsf(filename; read_forces=false, dump=false)
     
     f = open(filename)
@@ -44,7 +65,7 @@ function read_xsf(filename; read_forces=false, dump=false)
         split_line = split(readline(f))
         x, y, z = split_line[2:4]
         atoms[k, :] = [parse(Float64, x), parse(Float64, y), parse(Float64, z)]
-        if length(split_line) > 4
+        if read_forces && length(split_line) > 4
             forces_in_file = true
             fx, fy, fz = split_line[5:end]
             forces[k, :] = [parse(Float64, fx), parse(Float64, fy), parse(Float64, fz)]
