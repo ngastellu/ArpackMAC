@@ -64,40 +64,33 @@ function nn_pairdists(pos, rNN)
     return pairdists[bonded], ii, jj
 end
 
-function nn_pairdists_vec_ht(pos, rNN, return_hashtable=true)
-    N = size(pos,1)
-    pairdists = zeros(Int(N*(N-1)/2))
-    if return_hashtable
-        hashtable = zeros(Int,Int(N*(N-1)/2),2)
-    end
-    k = 1
-    for i=1:N-1 
-        pairdists[k:k+N-i-1] = norm.(eachrow(pos[i+1:N,:] .- pos[i,:]'))
-        if return_hashtable
-            hashtable[k:k+N-i-1,:] = reduce(hcat,[[i,j] for j=i+1:N])'
-            
-        end
-        k+=N-i
-    end
-    bonded = pairdists .<= rNN
-    if return_hashtable
-        #hashtable = reduce(hcat, hashtable)' #turns hashtable into a matrix (as opposed to a vector of vectors)
-        return pairdists[bonded], hashtable[bonded,:]
-    else
-        nn_k_inds = findall(bonded)
-        ii, jj = ij_inds_vec(nn_k_inds, N)
-        return pairdists[bonded], ii, jj
-    end
-end
 
-function nn_pairdists_vec(pos, rNN)
-    N = size(pos,1)
+function nn_pairdists_vec(pos, rNN; cellsize=nothing)
+    n1 = size(pos,1)
+    n2 = size(pos,2)
+
+    if n1 > n2 # if positions are row-ordered, transpose them for faster looping
+        pos = pos'
+    end
+    N = size(pos,2)
+    d = size(pos,1)
+
+    println("N = $N")
+
     pairdists = zeros(Int(N*(N-1)/2))
     ii = zeros(Int,Int(N*(N-1)/2))
     jj = zeros(Int,Int(N*(N-1)/2))
+    
+    if cellsize == nothing
+        cellsize = Array{Float64}(undef,d)
+        for i=1:d
+            cellsize[i] = Inf
+        end 
+    end
+
     k = 1
     for i=1:N-1 
-        pairdists[k:(k+N-i-1)] = norm.(eachrow(pos[i+1:N,:] .- pos[i,:]'))
+        pairdists[k:(k+N-i-1)] = norm.(eachcol(pos[:,i+1:N] .- pos[:,i]))
         ii[k:(k+N-i-1)] .= i 
         jj[k:(k+N-i-1)] = i+1:N
         k+=N-i
@@ -119,7 +112,7 @@ function nn_pairdists_full_vec(pos,rNN)
     return nn_pairdists, ii, jj
 end
 
-function lindbergHtb_sparse(pos,rNN;return_data=false)
+function lindbergHtb_sparse(pos,rNN;return_data=false,cellsize=nothing)
     β0 = -2.438 #eV
     kb = 0.405 #angstrom^-1
     R0 = 1.397 #angstrom
@@ -127,7 +120,7 @@ function lindbergHtb_sparse(pos,rNN;return_data=false)
 
     N = size(pos,1)
     println("Entering pairdists now...")
-    dists, ii, jj = nn_pairdists_vec(pos,rNN)
+    dists, ii, jj = nn_pairdists_vec(pos,rNN;cellsize=cellsize)
     hvals = @. β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
     Htb = sparse(ii,jj,hvals,N,N)
     Htb += Htb' #symmetrise Htb
