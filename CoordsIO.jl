@@ -1,16 +1,11 @@
 module CoordsIO
 
-export read_xsf, read_xyz, get_frame
+export read_xsf, read_xyz, read_xyz_supercell, get_frame
 
-function read_xyz(filename)
-    f = open(filename)
-
-    na = parse(Int, strip(readline(f))) # first line contains number of atoms
+function parse_coords(f::IOStream, na::Int)
     symbols = Vector{String}(undef, na)
     pos = zeros(Float64,(3,na))
-
-    readline(f) #skip second line
-
+    
     for k=1:na
         split_line = split(strip(readline(f)))
         symbols[k] = split_line[1]
@@ -19,6 +14,33 @@ function read_xyz(filename)
     end
 
     return pos, symbols
+end
+
+function read_xyz(filename::String)
+    f = open(filename)
+    na = parse(Int, strip(readline(f))) # first line contains number of atoms
+    
+    readline(f) # skip second line
+    pos, symbols = parse_coords(f,na)
+    
+    return pos, symbols
+end
+
+function read_xyz_supercell(filename::String)
+    f = open(filename)
+    na = parse(Int, strip(readline(f))) # first line contains number of atoms
+
+    line2 = readline(f) #second line contains cell info
+        
+    cell_vec_coords = split(split(split(line2, '=')[2], '"')[2]) # Expects ASE formatting
+    supercell = parse.(Float64, cell_vec_coords[[1,5,9]]) # assume orthorhombic cell (all lattice vectors mutually orthogonal)
+
+    supercell[ supercell .== 0 ] .= Inf # only apply PBC in directions where lattice dimensions are nonzero
+
+    pos, symbols = parse_coords(f, na)
+
+    return pos, supercell, symbols
+
 end
 
 
