@@ -102,7 +102,7 @@ function nn_pairdists_vec(pos::AbstractMatrix{<:Number}, rNN::Number, cellsize::
     ii = zeros(Int,Int(N*(N-1)/2))
     jj = zeros(Int,Int(N*(N-1)/2))
     dr = zeros(d)
-    
+
     k = 1
     for i=1:N-1 
         for j=i+1:N
@@ -143,7 +143,13 @@ function lindbergHtb_sparse(pos,rNN;return_data=false,cellsize=nothing)
 
     N = size(pos,1)
     println("Entering pairdists now...")
-    dists, ii, jj = nn_pairdists_vec(pos,rNN;cellsize=cellsize)
+
+    if cellsize != nothing
+        dists, ii, jj = nn_pairdists_vec(pos,rNN,cellsize)
+    else
+        dists, ii, jj = nn_pairdists_vec(pos,rNN)
+    end
+
     hvals = @. β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
     Htb = sparse(ii,jj,hvals,N,N)
     Htb += Htb' #symmetrise Htb
