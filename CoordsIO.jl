@@ -41,9 +41,9 @@ function read_xsf(filename; read_forces=false, dump=false)
             readline(f)
         end
 
-        supercell = []
-        push!(supercell, parse(Float64, split(readline(f))[1]))
-        push!(supercell, parse(Float64, split(readline(f))[2]))
+        supercell = Array{Float64}(undef,2)
+        supercell[1] = parse(Float64, split(readline(f))[1])
+        supercell[2] = parse(Float64, split(readline(f))[2])
 
         for i in 1:2
             readline(f)

@@ -42,6 +42,9 @@ for xsf in os.listdir(strucdir):
     pos, supercell = read_xsf(os.path.join(strucdir, xsf),read_forces = False)
     supercell = np.array(supercell[:2])
     pos = pos[:,:2] % supercell
+
+    np.save(os.path.join(savedir,f'pos-{istruc}.npy'), pos)
+
     read_end = perf_counter()
     read_time = read_end - start
 

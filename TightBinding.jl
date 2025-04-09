@@ -64,8 +64,7 @@ function nn_pairdists(pos, rNN)
     return pairdists[bonded], ii, jj
 end
 
-
-function nn_pairdists_vec(pos, rNN; cellsize=nothing)
+function prepare_pos(pos::AbstractMatrix{T}) where T<:Number
     n1 = size(pos,1)
     n2 = size(pos,2)
 
@@ -74,26 +73,50 @@ function nn_pairdists_vec(pos, rNN; cellsize=nothing)
     end
     N = size(pos,2)
     d = size(pos,1)
+    return pos, N, d
+end
 
-    println("N = $N")
 
+# standard version
+function nn_pairdists_vec(pos::AbstractMatrix{<:Number}, rNN::Number)
+    N = size(pos,2)
     pairdists = zeros(Int(N*(N-1)/2))
     ii = zeros(Int,Int(N*(N-1)/2))
     jj = zeros(Int,Int(N*(N-1)/2))
-    
-    if cellsize == nothing
-        cellsize = Array{Float64}(undef,d)
-        for i=1:d
-            cellsize[i] = Inf
-        end 
-    end
-
     k = 1
     for i=1:N-1 
         pairdists[k:(k+N-i-1)] = norm.(eachcol(pos[:,i+1:N] .- pos[:,i]))
         ii[k:(k+N-i-1)] .= i 
         jj[k:(k+N-i-1)] = i+1:N
         k+=N-i
+    end
+    bonded = pairdists .<= rNN
+    return @views pairdists[bonded], ii[bonded], jj[bonded]
+end
+
+# PBC version
+function nn_pairdists_vec(pos::AbstractMatrix{<:Number}, rNN::Number, cellsize::Array{<:Number}) 
+
+    d, N = size(pos)
+    pairdists = zeros(Int(N*(N-1)/2))
+    ii = zeros(Int,Int(N*(N-1)/2))
+    jj = zeros(Int,Int(N*(N-1)/2))
+    dr = zeros(d)
+    
+    k = 1
+    for i=1:N-1 
+        for j=i+1:N
+            @inbounds for dim=1:d
+                # use minimum image convention to properly implement PBC
+                dx = pos[dim,j] - pos[dim,i]
+                dx -= round(dx / cellsize[dim]) * cellsize[dim] 
+                dr[dim] = dx
+            end
+            pairdists[k] = norm(dr)
+            ii[k] = i
+            jj[k] = j
+            k += 1
+        end
     end
     bonded = pairdists .<= rNN
     return @views pairdists[bonded], ii[bonded], jj[bonded]
