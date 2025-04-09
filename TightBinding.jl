@@ -109,7 +109,9 @@ function nn_pairdists_vec(pos::AbstractMatrix{<:Number}, rNN::Number, cellsize::
             @inbounds for dim=1:d
                 # use minimum image convention to properly implement PBC
                 dx = pos[dim,j] - pos[dim,i]
-                dx -= round(dx / cellsize[dim]) * cellsize[dim] 
+                if cellsize[dim] ∉ [0,Inf] # apply PBC only for finite cellsize
+                    dx -= round(dx / cellsize[dim]) * cellsize[dim] 
+                end
                 dr[dim] = dx
             end
             pairdists[k] = norm(dr)
@@ -144,10 +146,10 @@ function lindbergHtb_sparse(pos,rNN;return_data=false,cellsize=nothing)
     N = size(pos,1)
     println("Entering pairdists now...")
 
-    if cellsize != nothing
-        dists, ii, jj = nn_pairdists_vec(pos,rNN,cellsize)
-    else
+    if isnothing(cellsize)
         dists, ii, jj = nn_pairdists_vec(pos,rNN)
+    else
+        dists, ii, jj = nn_pairdists_vec(pos,rNN,cellsize)
     end
 
     hvals = @. β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
