@@ -18,6 +18,7 @@ else
     posfile = "gnr_$(structype)_$(nx)x$(ny).xyz"
     println("Reading coords from file: $posfile...")
     pos, supercell, _ = read_xyz_supercell(posfile)
+    pos = pos[1:2,:]
     supercell = supercell[2:3] # ASE formats the cell s.t. PBC are along z, our coords are defined s.t. PBC are along y
     rCC = 1.8
 	H, ii, jj, hvals = lindbergHtb_sparse(pos,rCC;return_data=true,cellsize=supercell)
