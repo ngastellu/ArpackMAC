@@ -8,11 +8,10 @@ module TightBindingTests
     # Define useful globals
 
     rCC = 1.8
-
+    
     istruc = 374
-    pospath = "/Users/nico/Desktop/simulation_outputs/MAC_structures/kMC/slurm-6727121_fixed/sample-$(istruc).xsf"
-
-    bench_data_dir = "nn_benchmarks/"
+    pospath_MAC = "/Users/nico/Desktop/simulation_outputs/MAC_structures/kMC/slurm-6727121_fixed/sample-$(istruc).xsf"
+    bench_data_dir_MAC = "nn_benchmarks/kMC_MAC/"
 
     function quick_hcat(ii, jj)
         N = size(ii, 1)
@@ -26,7 +25,7 @@ module TightBindingTests
         return nn
     end
 
-    function loadpos() 
+    function loadpos_MAC(pospath) 
         pos, supercell = read_xsf(pospath)
         pos = pos[:,1:2]'
         supercell = supercell[1:2]
@@ -36,19 +35,25 @@ module TightBindingTests
         return pos, supercell # transpose pos to have it column-ordered for more efficient looping
     end
 
-    function load_nn_benchmarks()
-        dists = npzread(joinpath(bench_data_dir,"dists-$(istruc).npy"))
-        nn_list = transpose(npzread(joinpath(bench_data_dir,"nns-$(istruc).npy")) .+ 1)
-        dists_pbc = npzread(joinpath(bench_data_dir,"dists_pbc-$(istruc).npy"))
-        nn_list_pbc = transpose(npzread(joinpath(bench_data_dir,"nns_pbc-$(istruc).npy")) .+ 1)
+    function loadpos_gnr(pospath)
+        pos, supercell, _ = read_xyz_supercell(pospath)
+        supercell = supercell[2:3]
+        return pos, supercell
+    end
+
+    function load_nn_benchmarks(bench_data_dir, label)
+        dists = npzread(joinpath(bench_data_dir,"dists-$(label).npy"))
+        nn_list = transpose(npzread(joinpath(bench_data_dir,"nns-$(label).npy")) .+ 1)
+        dists_pbc = npzread(joinpath(bench_data_dir,"dists_pbc-$(label).npy"))
+        nn_list_pbc = transpose(npzread(joinpath(bench_data_dir,"nns_pbc-$(label).npy")) .+ 1)
 
         return dists, nn_list, dists_pbc, nn_list_pbc
     end
 
 
 
-    function nn_pairdists_vec_tst(pos, supercell)
-        dists, nn_list, dists_pbc, nn_list_pbc = load_nn_benchmarks()
+    function nn_pairdists_vec_tst(pos, supercell, bench_data_dir, label)
+        dists, nn_list, dists_pbc, nn_list_pbc = load_nn_benchmarks(bench_data_dir, label)
         
         dists_new, ii, jj = nn_pairdists_vec(pos, rCC)
         nn_list_new = quick_hcat(ii, jj)
@@ -72,14 +77,26 @@ module TightBindingTests
     end
 
     @testset "Positions test" begin
-        pos, supercell = loadpos()
-        pos_npy = (npzread(joinpath(bench_data_dir, "pos-$(istruc).npy")))'
+        pos, supercell = loadpos_MAC(pospath_MAC)
+        pos_npy = (npzread(joinpath(bench_data_dir_MAC, "pos-$(istruc).npy")))'
         @test all(pos == pos_npy)
     end
 
-    @testset "Nearest Neighbour list and distances test" begin
-        pos, supercell = loadpos()
-        nn_pairdists_vec_tst(pos, supercell)
+    @testset "[MAC] NN list and distances test" begin
+        istruc = 374
+        pospath_MAC = "/Users/nico/Desktop/simulation_outputs/MAC_structures/kMC/slurm-6727121_fixed/sample-$(istruc).xsf"
+        bench_data_dir_MAC = "nn_benchmarks/kMC_MAC/"
+        pos, supercell = loadpos_MAC(pospath_MAC)
+        nn_pairdists_vec_tst(pos, supercell, bench_data_dir_MAC,istruc)
+    end
+
+    @testset "[GNR] NN list and distances test" begin
+        gnr_label = "zigzag_11x100"
+        gnr_type = split(gnr_label, '_')[1]
+        gnr_pospath = "/Users/nico/Desktop/simulation_outputs/graphene_TB/$(gnr_type)/gnr_$(gnr_label).xyz"
+        bench_data_dir_gnr = "nn_benchmarks/GNRs/"
+        pos, supercell = loadpos_gnr(gnr_pospath)
+        nn_pairdists_vec_tst(pos, supercell, bench_data_dir_gnr, gnr_label)
     end
 
 end
