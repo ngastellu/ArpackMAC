@@ -6,13 +6,19 @@ module TightBindingTests
     using Test, NPZ, .TightBinding, .CoordsIO
 
     # Define useful globals
-
     rCC = 1.8
-    
+
+    # MAC globals
     istruc = 374
     pospath_MAC = "/Users/nico/Desktop/simulation_outputs/MAC_structures/kMC/slurm-6727121_fixed/sample-$(istruc).xsf"
     bench_data_dir_MAC = "nn_benchmarks/kMC_MAC/"
 
+    # GNR globals        
+    gnr_label = "zigzag_11x100"
+    gnr_type = split(gnr_label, '_')[1]
+    gnr_pospath = "/Users/nico/Desktop/simulation_outputs/graphene_TB/$(gnr_type)/gnr_$(gnr_label).xyz"
+    bench_data_dir_gnr = "nn_benchmarks/GNRs/"
+    
     function quick_hcat(ii, jj)
         N = size(ii, 1)
         @assert size(jj, 1) == N
@@ -37,6 +43,7 @@ module TightBindingTests
 
     function loadpos_gnr(pospath)
         pos, supercell, _ = read_xyz_supercell(pospath)
+        pos = pos[1:2,:]
         supercell = supercell[2:3]
         return pos, supercell
     end
@@ -69,11 +76,11 @@ module TightBindingTests
         println(size(dists_pbc))
         println(size(dists_pbc_new))
 
-        @test all(dists == dists_new)
-        @test all(nn_list == nn_list_new)
+        @test all(dists .== dists_new)
+        @test all(nn_list .== nn_list_new)
 
-        @test all(dists_pbc == dists_pbc_new)
-        @test all(nn_list_pbc == nn_list_pbc_new)   
+        @test all(dists_pbc .== dists_pbc_new)
+        @test all(nn_list_pbc .== nn_list_pbc_new)   
     end
 
     @testset "Positions test" begin
@@ -83,18 +90,11 @@ module TightBindingTests
     end
 
     @testset "[MAC] NN list and distances test" begin
-        istruc = 374
-        pospath_MAC = "/Users/nico/Desktop/simulation_outputs/MAC_structures/kMC/slurm-6727121_fixed/sample-$(istruc).xsf"
-        bench_data_dir_MAC = "nn_benchmarks/kMC_MAC/"
         pos, supercell = loadpos_MAC(pospath_MAC)
         nn_pairdists_vec_tst(pos, supercell, bench_data_dir_MAC,istruc)
     end
 
     @testset "[GNR] NN list and distances test" begin
-        gnr_label = "zigzag_11x100"
-        gnr_type = split(gnr_label, '_')[1]
-        gnr_pospath = "/Users/nico/Desktop/simulation_outputs/graphene_TB/$(gnr_type)/gnr_$(gnr_label).xyz"
-        bench_data_dir_gnr = "nn_benchmarks/GNRs/"
         pos, supercell = loadpos_gnr(gnr_pospath)
         nn_pairdists_vec_tst(pos, supercell, bench_data_dir_gnr, gnr_label)
     end

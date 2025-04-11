@@ -143,7 +143,7 @@ function lindbergHtb_sparse(pos,rNN;return_data=false,cellsize=nothing)
     R0 = 1.397 #angstrom
     μb = 2.035 #angstrom^-1
 
-    N = size(pos,1)
+    N = size(pos,2)
     println("Entering pairdists now...")
 
     if isnothing(cellsize)
@@ -151,6 +151,10 @@ function lindbergHtb_sparse(pos,rNN;return_data=false,cellsize=nothing)
     else
         dists, ii, jj = nn_pairdists_vec(pos,rNN,cellsize)
     end
+
+    # println("[lindbergHtb_sparse] N = $N")
+    # println("[lindbergHtb_sparse] $(minimum(ii)) ≤ ii ≤ $(maximum(ii))")
+    # println("[lindbergHtb_sparse] $(minimum(jj)) ≤ jj ≤ $(maximum(jj))")
 
     hvals = @. β0 * exp(-μb*(dists-R0)) * (1+kb*(dists-R0))
     Htb = sparse(ii,jj,hvals,N,N)
